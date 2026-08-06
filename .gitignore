@@ -1,0 +1,37 @@
+# Dependências e builds
+node_modules/
+.next/
+out/
+
+# Banco de dados local
+data/
+*.db
+*.db-journal
+
+# Variáveis de ambiente
+.env
+.env.local
+.env.*.local
+
+# Uploads locais
+uploads/
+
+# Logs
+*.log
+npm-debug.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Prisma client gerado
+app/generated/
+
+# Docker
+.dockerignore

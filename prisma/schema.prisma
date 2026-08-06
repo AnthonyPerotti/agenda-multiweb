@@ -1,0 +1,174 @@
+// ============================================================
+// Schema Prisma — Agenda Multiweb (CTE/UFSM)
+// ============================================================
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ==================== USUÁRIOS DA EQUIPE ====================
+
+model Usuario {
+  id           String   @id @default(cuid())
+  nome         String
+  email        String   @unique
+  senhaHash    String
+  perfil       Perfil   @default(MEMBRO)
+  ativo        Boolean  @default(true)
+  criadoEm    DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  mensagens    Mensagem[]
+  acoes        HistoricoAcao[]
+  eventosResp  EventoResponsavel[]
+}
+
+enum Perfil {
+  ADMIN
+  MEMBRO
+}
+
+// ==================== TICKETS ====================
+
+model Ticket {
+  id               String          @id @default(cuid())
+  codigo           String          @unique // Ex: MW-8F92A
+  tipo             TipoSolicitacao
+  status           StatusTicket    @default(ABERTO)
+
+  // Dados do solicitante
+  nomeSolicitante  String
+  emailSolicitante String
+
+  // Dados do evento
+  tituloEvento     String
+  descricao        String?
+  dataInicio       DateTime
+  dataFim          DateTime
+  local            String
+  anexosLinks      String?         // JSON: array de { nome, url, tipo }
+
+  // Threading de e-mail (agrupamento na caixa de entrada)
+  emailMessageId   String?         // Message-ID do e-mail inicial de confirmação
+
+  criadoEm        DateTime        @default(now())
+  atualizadoEm    DateTime        @updatedAt
+
+  mensagens        Mensagem[]
+  historico        HistoricoAcao[]
+  evento           Evento?
+}
+
+enum TipoSolicitacao {
+  TRANSMISSAO_EXTERNA
+  MINI_AUDITORIO
+}
+
+enum StatusTicket {
+  ABERTO
+  EM_ANALISE
+  ACEITO
+  RECUSADO
+  FINALIZADO
+}
+
+// ==================== MENSAGENS (CHAT DO TICKET) ====================
+
+model Mensagem {
+  id           String    @id @default(cuid())
+  ticketId     String
+  ticket       Ticket    @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  // Remetente: membro da equipe (usuarioId preenchido) ou solicitante externo (null)
+  usuarioId    String?
+  usuario      Usuario?  @relation(fields: [usuarioId], references: [id])
+  nomeAutor    String    // Nome exibido (preservado mesmo se usuário for removido)
+  tipoAutor    TipoAutor
+
+  conteudo     String
+  lida         Boolean   @default(false)
+  criadoEm    DateTime  @default(now())
+}
+
+enum TipoAutor {
+  EQUIPE
+  SOLICITANTE
+  SISTEMA
+}
+
+// ==================== HISTÓRICO DE AÇÕES ====================
+
+model HistoricoAcao {
+  id          String   @id @default(cuid())
+  ticketId    String
+  ticket      Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  usuarioId   String?
+  usuario     Usuario? @relation(fields: [usuarioId], references: [id])
+  nomeUsuario String   // Preservado mesmo se usuário for removido
+  acao        String   // Ex: "Status alterado para ACEITO"
+  detalhes    String?  // JSON com dados adicionais
+  criadoEm   DateTime @default(now())
+}
+
+// ==================== EVENTOS DA AGENDA ====================
+
+model Evento {
+  id            String          @id @default(cuid())
+  ticketId      String?         @unique
+  ticket        Ticket?         @relation(fields: [ticketId], references: [id])
+
+  titulo        String
+  descricao     String?
+  dataInicio    DateTime
+  dataFim       DateTime
+  local         String
+  tipo          TipoSolicitacao
+
+  // Sincronização Google Calendar
+  googleEventId String?
+
+  criadoEm    DateTime            @default(now())
+  atualizadoEm DateTime           @updatedAt
+
+  responsaveis  EventoResponsavel[]
+}
+
+// Tabela de junção Evento ↔ Usuario (N:N)
+model EventoResponsavel {
+  eventoId  String
+  evento    Evento  @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+  usuarioId String
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@id([eventoId, usuarioId])
+}
+
+// ==================== CONFIGURAÇÕES DO SISTEMA ====================
+
+model Configuracao {
+  id           String   @id @default(cuid())
+  chave        String   @unique
+  valor        String   // Texto simples ou JSON stringificado
+  atualizadoEm DateTime @updatedAt
+}
+
+// Chaves usadas em Configuracao:
+// smtp_host         — string
+// smtp_port         — number (string)
+// smtp_secure       — "true"/"false"
+// smtp_user         — string
+// smtp_pass         — string (criptografada)
+// smtp_from_name    — string
+// smtp_from_email   — string
+// template_confirmacao  — HTML com variáveis {nome}, {codigo}, {titulo}, {link}
+// template_aceite       — HTML
+// template_recusa       — HTML
+// template_mensagem     — HTML
+// google_calendar_id    — string
+// google_credentials    — JSON da Service Account (stringificado)
+// site_url              — URL base para links nos e-mails
