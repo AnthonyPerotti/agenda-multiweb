@@ -1,31 +1,24 @@
-# ============================================================
-# docker-compose.yml — Agenda Multiweb (CTE/UFSM)
-# Otimizado para deploy no Portainer via clonagem direta
-# ============================================================
+version: '3.8'
 
 services:
   agenda-multiweb:
     build:
-      context: https://github.com/AnthonyPerotti/agenda-multiweb.git#main
+      context: .
       dockerfile: Dockerfile
     container_name: agenda-multiweb
     restart: unless-stopped
     ports:
-      # Mapeia a porta do servidor (padrão 80) para a porta 3000 interna do container
       - "${FRONTEND_PORT:-80}:3000"
     environment:
-      # Banco de Dados SQLite
+      - NODE_ENV=production
+      - PORT=3000
       - DATABASE_URL=file:./data/agenda.db
-      # NextAuth (Chave de criptografia de sessão)
       - AUTH_SECRET=${AUTH_SECRET:-dev-secret-agenda-multiweb-cte-ufsm-2024}
       - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost}
-      # URL pública para links nos e-mails
       - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:-http://localhost}
-      - NODE_ENV=production
     volumes:
-      # Volume persistente para o banco SQLite
+      # Volumes para garantir a persistência dos dados e anexos entre atualizações
       - agenda-data:/app/data
-      # Volume persistente para uploads/anexos
       - agenda-uploads:/app/uploads
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/auth/session"]
@@ -33,11 +26,7 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
-    labels:
-      - "com.centurylinklabs.watchtower.enable=true"
 
 volumes:
   agenda-data:
-    driver: local
   agenda-uploads:
-    driver: local
