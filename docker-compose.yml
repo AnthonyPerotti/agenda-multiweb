@@ -1,14 +1,13 @@
 # ============================================================
 # docker-compose.yml — Agenda Multiweb (CTE/UFSM)
-# Otimizado para deploy no Portainer via GitHub Registry
+# Otimizado para deploy no Portainer via clonagem direta
 # ============================================================
 
 services:
   agenda-multiweb:
-    image: ghcr.io/anthonyperotti/agenda-multiweb:latest
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile
+    build:
+      context: https://github.com/AnthonyPerotti/agenda-multiweb.git#main
+      dockerfile: Dockerfile
     container_name: agenda-multiweb
     restart: unless-stopped
     ports:
