@@ -1,18 +1,18 @@
 # ============================================================
 # docker-compose.yml — Agenda Multiweb (CTE/UFSM)
-# Otimizado para deploy no Portainer
+# Otimizado para deploy no Portainer via GitHub Registry
 # ============================================================
 
 services:
   agenda-multiweb:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/anthonyperotti/agenda-multiweb:latest
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
     container_name: agenda-multiweb
     restart: unless-stopped
     ports:
       # Mapeia a porta do servidor (padrão 80) para a porta 3000 interna do container
-      # Pode ser sobrescrito no Portainer via variável FRONTEND_PORT
       - "${FRONTEND_PORT:-80}:3000"
     environment:
       # Banco de Dados SQLite
@@ -42,9 +42,3 @@ volumes:
     driver: local
   agenda-uploads:
     driver: local
-
-# ============================================================
-# Para iniciar via Docker Compose localmente ou Portainer:
-#   1. Por padrão abre na porta 80 (ex: http://172.16.1.177)
-#   2. Para alterar a porta, defina FRONTEND_PORT nas variáveis
-# ============================================================
