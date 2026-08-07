@@ -14,7 +14,8 @@ COPY package*.json ./
 COPY prisma ./prisma/
 COPY prisma.config.ts ./
 
-RUN npm install
+# Usar --ignore-scripts para evitar falhas no postinstall durante a cópia inicial
+RUN npm install --ignore-scripts
 
 # ─── Stage 2: Builder ────────────────────────────────────────
 FROM node:20-alpine AS builder
