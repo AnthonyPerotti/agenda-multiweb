@@ -28,6 +28,7 @@ export default function ConfiguracoesPage() {
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [testando, setTestando] = useState(false);
+  const [testandoGoogle, setTestandoGoogle] = useState(false);
   const [feedback, setFeedback] = useState<{ tipo: "sucesso" | "erro"; mensagem: string } | null>(null);
   const [templateAtivo, setTemplateAtivo] = useState("template_confirmacao");
   const [emailTeste, setEmailTeste] = useState("");
@@ -96,6 +97,29 @@ export default function ConfiguracoesPage() {
       setFeedback({ tipo: data.sucesso ? "sucesso" : "erro", mensagem: data.mensagem ?? data.erro ?? "Erro no teste" });
     } finally {
       setTestando(false);
+    }
+  };
+
+  const testarGoogle = async () => {
+    if (!configs.google_calendar_id || !configs.google_credentials) {
+      setFeedback({ tipo: "erro", mensagem: "Preencha o ID da Agenda e as Credenciais JSON antes de testar." });
+      return;
+    }
+    setTestandoGoogle(true);
+    setFeedback(null);
+    try {
+      const res = await fetch("/api/configuracoes/testar-google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          calendarId: configs.google_calendar_id,
+          credentialsJson: configs.google_credentials,
+        }),
+      });
+      const data = await res.json();
+      setFeedback({ tipo: data.sucesso ? "sucesso" : "erro", mensagem: data.mensagem ?? data.erro ?? "Erro ao testar Google Calendar" });
+    } finally {
+      setTestandoGoogle(false);
     }
   };
 
@@ -349,7 +373,10 @@ export default function ConfiguracoesPage() {
               </div>
             </div>
           </div>
-          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 16 }}>
+            <button className="btn btn-secondary" onClick={testarGoogle} disabled={testandoGoogle}>
+              {testandoGoogle ? "⏳ Testando..." : "🧪 Testar Conexão"}
+            </button>
             <button className="btn btn-primary" onClick={salvar} disabled={salvando}>
               {salvando ? "⏳ Salvando..." : "💾 Salvar Integração"}
             </button>
