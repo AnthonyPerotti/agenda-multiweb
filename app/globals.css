@@ -205,6 +205,7 @@
 
   .badge-transmissao { background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); }
   .badge-auditorio { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+  .badge-formatura { background: rgba(245, 166, 35, 0.15); color: #f5a623; border: 1px solid rgba(245, 166, 35, 0.3); }
 
   /* Sidebar */
   .sidebar {
@@ -360,6 +361,12 @@
     background: rgba(168, 85, 247, 0.25);
     border-left: 3px solid #a855f7;
     color: #c084fc;
+  }
+
+  .cal-event-formatura {
+    background: rgba(245, 166, 35, 0.25);
+    border-left: 3px solid #f5a623;
+    color: #fbbf24;
   }
 
   /* Hero público */

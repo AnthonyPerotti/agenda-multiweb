@@ -32,6 +32,24 @@ export async function PATCH(request: Request, { params }: Params) {
     data: { ...(dados.status ? { status: dados.status } : {}) },
   });
 
+  // Se o status for alterado para ACEITO, garantir que o evento seja criado na agenda
+  if (dados.status === "ACEITO") {
+    const eventoExistente = await prisma.evento.findUnique({ where: { ticketId: id } });
+    if (!eventoExistente) {
+      await prisma.evento.create({
+        data: {
+          ticketId: ticket.id,
+          titulo: ticket.tituloEvento,
+          descricao: ticket.descricao,
+          dataInicio: ticket.dataInicio,
+          dataFim: ticket.dataFim,
+          local: ticket.local,
+          tipo: ticket.tipo,
+        },
+      });
+    }
+  }
+
   // Registrar ação no histórico
   await prisma.historicoAcao.create({
     data: {

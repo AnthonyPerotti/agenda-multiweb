@@ -10,7 +10,7 @@ const STATUS_LABELS: Record<string, string> = {
   EM_ANALISE: "Em Análise",
   ACEITO: "Aceito",
   RECUSADO: "Recusado",
-  FINALIZADO: "Finalizado",
+  FINALIZADO: "Concluído (Evento Realizado)",
 };
 
 const TIPO_LABELS: Record<string, string> = {

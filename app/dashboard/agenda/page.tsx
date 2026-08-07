@@ -35,6 +35,27 @@ function isMesmoDay(d1: Date, d2: Date) {
   return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
 }
 
+function getEventClass(tipo: string) {
+  if (tipo === "TRANSMISSAO_EXTERNA") return "cal-event-transmissao";
+  if (tipo === "MINI_AUDITORIO") return "cal-event-auditorio";
+  if (tipo === "COLACAO_FORMATURA") return "cal-event-formatura";
+  return "cal-event-transmissao";
+}
+
+function getBadgeClass(tipo: string) {
+  if (tipo === "TRANSMISSAO_EXTERNA") return "badge-transmissao";
+  if (tipo === "MINI_AUDITORIO") return "badge-auditorio";
+  if (tipo === "COLACAO_FORMATURA") return "badge-formatura";
+  return "badge-transmissao";
+}
+
+function getTipoLabel(tipo: string) {
+  if (tipo === "TRANSMISSAO_EXTERNA") return "📡 Transmissão Externa";
+  if (tipo === "MINI_AUDITORIO") return "🎤 Mini Auditório";
+  if (tipo === "COLACAO_FORMATURA") return "🎓 Colação / Formatura";
+  return tipo;
+}
+
 export default function AgendaPage() {
   const [view, setView] = useState<"mes" | "semana" | "dia">("mes");
   const [dataAtual, setDataAtual] = useState(new Date());
@@ -209,7 +230,7 @@ export default function AgendaPage() {
                 {evsDia.slice(0, 2).map((ev) => (
                   <div
                     key={ev.id}
-                    className={`cal-event ${ev.tipo === "TRANSMISSAO_EXTERNA" ? "cal-event-transmissao" : "cal-event-auditorio"}`}
+                    className={`cal-event ${getEventClass(ev.tipo)}`}
                     style={{ marginBottom: 2 }}
                     onClick={() => { setEventoModal({ evento: ev, editando: false }); setEditForm(ev); }}
                     title={`${ev.titulo} — ${formatarHora(ev.dataInicio)}`}
@@ -249,7 +270,7 @@ export default function AgendaPage() {
                 {evsDia.map((ev) => (
                   <div
                     key={ev.id}
-                    className={`cal-event ${ev.tipo === "TRANSMISSAO_EXTERNA" ? "cal-event-transmissao" : "cal-event-auditorio"}`}
+                    className={`cal-event ${getEventClass(ev.tipo)}`}
                     onClick={() => { setEventoModal({ evento: ev, editando: false }); setEditForm(ev); }}
                     style={{ whiteSpace: "normal", fontSize: 11 }}
                   >
@@ -284,7 +305,7 @@ export default function AgendaPage() {
               <div
                 key={ev.id}
                 className="card"
-                style={{ borderLeft: `4px solid ${ev.tipo === "TRANSMISSAO_EXTERNA" ? "#0ea5e9" : "#a855f7"}`, cursor: "pointer" }}
+                style={{ borderLeft: `4px solid ${ev.tipo === "TRANSMISSAO_EXTERNA" ? "#0ea5e9" : ev.tipo === "MINI_AUDITORIO" ? "#a855f7" : "#f5a623"}`, cursor: "pointer" }}
                 onClick={() => { setEventoModal({ evento: ev, editando: false }); setEditForm(ev); }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -293,8 +314,8 @@ export default function AgendaPage() {
                     <div style={{ color: "#94a3b8", fontSize: 13 }}>🕐 {formatarHora(ev.dataInicio)} – {formatarHora(ev.dataFim)}</div>
                     <div style={{ color: "#64748b", fontSize: 13, marginTop: 4 }}>📍 {ev.local}</div>
                   </div>
-                  <span className={`badge ${ev.tipo === "TRANSMISSAO_EXTERNA" ? "badge-transmissao" : "badge-auditorio"}`}>
-                    {ev.tipo === "TRANSMISSAO_EXTERNA" ? "📡 Transmissão" : "🎤 Auditório"}
+                  <span className={`badge ${getBadgeClass(ev.tipo)}`}>
+                    {getTipoLabel(ev.tipo)}
                   </span>
                 </div>
               </div>
@@ -311,9 +332,10 @@ export default function AgendaPage() {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 800, color: "#f0f4ff", marginBottom: 4 }}>📅 Agenda</h1>
-          <div style={{ display: "flex", gap: 12 }}>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             <span className="badge badge-transmissao">📡 Transmissão Externa</span>
             <span className="badge badge-auditorio">🎤 Mini Auditório</span>
+            <span className="badge badge-formatura">🎓 Colação / Formatura</span>
           </div>
         </div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
@@ -385,7 +407,7 @@ export default function AgendaPage() {
                   className="input"
                   value={novoEvento.titulo}
                   onChange={(e) => setNovoEvento(p => ({ ...p, titulo: e.target.value }))}
-                  placeholder="ex: Transmissão da Aula Inaugural / Evento Interno CTE"
+                  placeholder="ex: Colação de Grau Solene / Gravação Formatura UFSM"
                 />
               </div>
 
@@ -398,6 +420,7 @@ export default function AgendaPage() {
                 >
                   <option value="TRANSMISSAO_EXTERNA">📡 Transmissão Externa (Prédios UFSM)</option>
                   <option value="MINI_AUDITORIO">🎤 Mini Auditório (Prédio 14, Sala 109)</option>
+                  <option value="COLACAO_FORMATURA">🎓 Gravação de Formatura / Colação de Grau</option>
                 </select>
               </div>
 
@@ -428,7 +451,7 @@ export default function AgendaPage() {
                   className="input"
                   value={novoEvento.local}
                   onChange={(e) => setNovoEvento(p => ({ ...p, local: e.target.value }))}
-                  placeholder="ex: Prédio 14, Sala 109 ou Auditório do CT"
+                  placeholder="ex: Centro de Convenções UFSM / Prédio 14"
                 />
               </div>
 
@@ -439,7 +462,7 @@ export default function AgendaPage() {
                   value={novoEvento.descricao}
                   onChange={(e) => setNovoEvento(p => ({ ...p, descricao: e.target.value }))}
                   rows={3}
-                  placeholder="Detalhes adicionais do evento presencial ou agendamento interno..."
+                  placeholder="Detalhes adicionais da gravação de formatura ou evento interno..."
                 />
               </div>
 
@@ -461,8 +484,8 @@ export default function AgendaPage() {
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 24 }}>
           <div className="glass-card" style={{ maxWidth: 560, width: "100%", padding: 32, maxHeight: "90vh", overflowY: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
-              <span className={`badge ${eventoModal.evento.tipo === "TRANSMISSAO_EXTERNA" ? "badge-transmissao" : "badge-auditorio"}`}>
-                {eventoModal.evento.tipo === "TRANSMISSAO_EXTERNA" ? "📡 Transmissão" : "🎤 Auditório"}
+              <span className={`badge ${getBadgeClass(eventoModal.evento.tipo)}`}>
+                {getTipoLabel(eventoModal.evento.tipo)}
               </span>
               <button onClick={() => setEventoModal(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b", fontSize: 20 }}>✕</button>
             </div>

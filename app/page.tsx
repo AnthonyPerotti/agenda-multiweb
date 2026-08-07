@@ -61,6 +61,8 @@ export default function HomePage() {
     dataFim: "",
     local: "",
     anexosLinks: "",
+    multiplosDias: false,
+    detalhamentoDias: "",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -73,8 +75,13 @@ export default function HomePage() {
     setCarregando(true);
     setErro("");
 
+    const descricaoFinal = form.multiplosDias
+      ? `📅 EVENTO DE MÚLTIPLOS DIAS:\n${form.detalhamentoDias}\n\n${form.descricao}`
+      : form.descricao;
+
     const payload = {
       ...form,
+      descricao: descricaoFinal,
       tipo,
       local: tipo === "MINI_AUDITORIO" ? "Prédio 14, Sala 109 – CTE/UFSM" : form.local,
       dataInicio: new Date(form.dataInicio).toISOString(),
@@ -346,9 +353,31 @@ export default function HomePage() {
                 />
               </div>
 
+              <div>
+                <label className="label">Duração do Evento *</label>
+                <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+                  <button
+                    type="button"
+                    className={`btn ${!form.multiplosDias ? "btn-primary" : "btn-secondary"}`}
+                    onClick={() => setForm(p => ({ ...p, multiplosDias: false }))}
+                    style={{ flex: 1, fontSize: 13 }}
+                  >
+                    📆 Dia Único
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn ${form.multiplosDias ? "btn-primary" : "btn-secondary"}`}
+                    onClick={() => setForm(p => ({ ...p, multiplosDias: true }))}
+                    style={{ flex: 1, fontSize: 13 }}
+                  >
+                    📅 Múltiplos Dias
+                  </button>
+                </div>
+              </div>
+
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                 <div>
-                  <label className="label">Data e Hora de Início *</label>
+                  <label className="label">{form.multiplosDias ? "Data e Hora de Início (1º Dia) *" : "Data e Hora de Início *"}</label>
                   <input
                     className="input"
                     type="datetime-local"
@@ -359,7 +388,7 @@ export default function HomePage() {
                   />
                 </div>
                 <div>
-                  <label className="label">Data e Hora de Fim *</label>
+                  <label className="label">{form.multiplosDias ? "Data e Hora de Fim (Último Dia) *" : "Data e Hora de Fim *"}</label>
                   <input
                     className="input"
                     type="datetime-local"
@@ -370,6 +399,21 @@ export default function HomePage() {
                   />
                 </div>
               </div>
+
+              {form.multiplosDias && (
+                <div>
+                  <label className="label">Detalhamento dos Dias e Horários *</label>
+                  <textarea
+                    className="input"
+                    name="detalhamentoDias"
+                    value={form.detalhamentoDias}
+                    onChange={handleChange}
+                    rows={3}
+                    placeholder="Especifique as datas e turnos de cada dia (Ex: Dia 10/08: 09h às 12h | Dia 11/08: 14h às 18h)"
+                    required
+                  />
+                </div>
+              )}
 
               {tipo === "TRANSMISSAO_EXTERNA" ? (
                 <div>

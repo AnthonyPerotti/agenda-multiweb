@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 const STATUS_LABELS: Record<string, string> = {
   ABERTO: "Em Aberto", EM_ANALISE: "Em Análise", ACEITO: "Aceito",
-  RECUSADO: "Recusado", FINALIZADO: "Finalizado",
+  RECUSADO: "Recusado", FINALIZADO: "Concluído (Evento Realizado)",
 };
 
 function formatarData(data: string) {

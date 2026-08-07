@@ -323,16 +323,24 @@ function ConsultarContent() {
 
             {/* ─── DOCUMENTO IMPRESSO (Visível apenas ao imprimir ou salvar PDF) ─── */}
             <div className="comprovante-print">
-              <div style={{ textAlign: "center", borderBottom: "2px solid #006633", paddingBottom: 16, marginBottom: 24 }}>
-                <h2 style={{ fontSize: 18, color: "#006633", fontWeight: 800, textTransform: "uppercase" }}>
-                  UNIVERSIDADE FEDERAL DE SANTA MARIA — UFSM
-                </h2>
-                <h3 style={{ fontSize: 14, color: "#003366", fontWeight: 700, marginTop: 4 }}>
-                  Coordenadoria de Tecnologia Educacional – CTE / Agenda Multiweb
-                </h3>
-                <h4 style={{ fontSize: 16, color: "#111827", fontWeight: 800, marginTop: 12, textTransform: "uppercase" }}>
-                  COMPROVANTE OFICIAL DE SOLICITAÇÃO E RESERVA
-                </h4>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "3px solid #006633", paddingBottom: 16, marginBottom: 24, gap: 16 }}>
+                {/* Logo UFSM */}
+                <img src="/images/ufsm-logo.png" alt="UFSM" style={{ height: 64, objectFit: "contain" }} />
+
+                <div style={{ textAlign: "center", flex: 1 }}>
+                  <h2 style={{ fontSize: 16, color: "#006633", fontWeight: 800, textTransform: "uppercase" }}>
+                    UNIVERSIDADE FEDERAL DE SANTA MARIA — UFSM
+                  </h2>
+                  <h3 style={{ fontSize: 13, color: "#003366", fontWeight: 700, marginTop: 2 }}>
+                    Coordenadoria de Tecnologia Educacional – CTE / Agenda Multiweb
+                  </h3>
+                  <h4 style={{ fontSize: 14, color: "#111827", fontWeight: 800, marginTop: 8, textTransform: "uppercase" }}>
+                    COMPROVANTE OFICIAL DE RESERVA E AGENDAMENTO
+                  </h4>
+                </div>
+
+                {/* Logo CTE */}
+                <img src="/images/cte-logo.png" alt="CTE/UFSM" style={{ height: 52, objectFit: "contain" }} />
               </div>
 
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc", padding: "16px 20px", borderRadius: 8, border: "1px solid #cbd5e1", marginBottom: 24 }}>

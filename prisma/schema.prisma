@@ -67,6 +67,7 @@ model Ticket {
 enum TipoSolicitacao {
   TRANSMISSAO_EXTERNA
   MINI_AUDITORIO
+  COLACAO_FORMATURA
 }
 
 enum StatusTicket {
