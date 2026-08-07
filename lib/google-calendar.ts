@@ -74,7 +74,7 @@ export async function criarEventoGoogle(data: GoogleEventData): Promise<string |
           dateTime: data.dataFim.toISOString(),
           timeZone: "America/Sao_Paulo",
         },
-        colorId: data.codigoTicket ? "2" : "1", // Verde para eventos de ticket
+        ...(data.codigoTicket ? { colorId: "2" } : {}),
       },
     });
 
