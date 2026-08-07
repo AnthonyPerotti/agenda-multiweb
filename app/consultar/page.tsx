@@ -40,6 +40,7 @@ interface Ticket {
   tipo: string;
   status: string;
   nomeSolicitante: string;
+  emailSolicitante: string;
   tituloEvento: string;
   descricao?: string;
   dataInicio: string;
@@ -110,12 +111,16 @@ function ConsultarContent() {
     }
   };
 
+  const imprimirComprovante = () => {
+    window.print();
+  };
+
   const cfg = ticket ? STATUS_CONFIG[ticket.status] : null;
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-primary)" }}>
       {/* Header */}
-      <header style={{
+      <header className="no-print" style={{
         background: "linear-gradient(135deg, #001a0d, #003366)",
         borderBottom: "1px solid rgba(0,102,51,0.3)",
         padding: "0 24px",
@@ -130,7 +135,7 @@ function ConsultarContent() {
       </header>
 
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "40px 24px" }}>
-        <div style={{ textAlign: "center", marginBottom: 40 }}>
+        <div className="no-print" style={{ textAlign: "center", marginBottom: 40 }}>
           <h1 style={{ fontSize: 28, fontWeight: 800, color: "#f0f4ff", marginBottom: 8 }}>
             Consultar Solicitação
           </h1>
@@ -138,7 +143,7 @@ function ConsultarContent() {
         </div>
 
         {/* Campo de busca */}
-        <div className="glass-card" style={{ padding: 24, marginBottom: 32 }}>
+        <div className="glass-card no-print" style={{ padding: 24, marginBottom: 32 }}>
           <div style={{ display: "flex", gap: 12 }}>
             <input
               className="input"
@@ -168,32 +173,37 @@ function ConsultarContent() {
         {/* Resultado */}
         {ticket && (
           <div className="fade-in">
-            {/* Card de status */}
-            <div className="card" style={{ marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+            {/* Card de status com Botão de Imprimir Comprovante */}
+            <div className="card no-print" style={{ marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
               <div>
                 <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>
                   Solicitação #{ticket.codigo}
                 </div>
                 <div style={{ fontSize: 20, fontWeight: 700, color: "#f0f4ff" }}>{ticket.tituloEvento}</div>
               </div>
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                background: `${cfg?.cor}22`,
-                border: `1px solid ${cfg?.cor}44`,
-                borderRadius: 20,
-                padding: "8px 16px",
-                color: cfg?.cor,
-                fontWeight: 700,
-                fontSize: 15,
-              }}>
-                {cfg?.icone} {cfg?.label}
+              <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+                <button className="btn btn-secondary" onClick={imprimirComprovante} style={{ fontSize: 13, gap: 6 }}>
+                  🖨️ Imprimir Comprovante (PDF)
+                </button>
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  background: `${cfg?.cor}22`,
+                  border: `1px solid ${cfg?.cor}44`,
+                  borderRadius: 20,
+                  padding: "8px 16px",
+                  color: cfg?.cor,
+                  fontWeight: 700,
+                  fontSize: 15,
+                }}>
+                  {cfg?.icone} {cfg?.label}
+                </div>
               </div>
             </div>
 
             {/* Abas */}
-            <div style={{ display: "flex", gap: 4, marginBottom: 20, borderBottom: "1px solid var(--border)" }}>
+            <div className="no-print" style={{ display: "flex", gap: 4, marginBottom: 20, borderBottom: "1px solid var(--border)" }}>
               {(["detalhes", "chat"] as const).map((a) => (
                 <button
                   key={a}
@@ -218,9 +228,10 @@ function ConsultarContent() {
 
             {/* Aba Detalhes */}
             {aba === "detalhes" && (
-              <div className="card fade-in">
+              <div className="card fade-in no-print">
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                   {[
+                    { label: "Solicitante", valor: `${ticket.nomeSolicitante} (${ticket.emailSolicitante})` },
                     { label: "Tipo", valor: ticket.tipo === "TRANSMISSAO_EXTERNA" ? "📡 Transmissão Externa" : "🎤 Mini Auditório" },
                     { label: "Local", valor: ticket.local },
                     { label: "Início", valor: formatarData(ticket.dataInicio) },
@@ -257,7 +268,7 @@ function ConsultarContent() {
 
             {/* Aba Chat */}
             {aba === "chat" && (
-              <div className="fade-in">
+              <div className="fade-in no-print">
                 <div className="card" style={{ minHeight: 320, marginBottom: 16 }}>
                   {ticket.mensagens.length === 0 ? (
                     <div style={{ textAlign: "center", padding: "60px 0", color: "#64748b" }}>
@@ -309,6 +320,66 @@ function ConsultarContent() {
                 )}
               </div>
             )}
+
+            {/* ─── DOCUMENTO IMPRESSO (Visível apenas ao imprimir ou salvar PDF) ─── */}
+            <div className="comprovante-print">
+              <div style={{ textAlign: "center", borderBottom: "2px solid #006633", paddingBottom: 16, marginBottom: 24 }}>
+                <h2 style={{ fontSize: 18, color: "#006633", fontWeight: 800, textTransform: "uppercase" }}>
+                  UNIVERSIDADE FEDERAL DE SANTA MARIA — UFSM
+                </h2>
+                <h3 style={{ fontSize: 14, color: "#003366", fontWeight: 700, marginTop: 4 }}>
+                  Coordenadoria de Tecnologia Educacional – CTE / Agenda Multiweb
+                </h3>
+                <h4 style={{ fontSize: 16, color: "#111827", fontWeight: 800, marginTop: 12, textTransform: "uppercase" }}>
+                  COMPROVANTE OFICIAL DE SOLICITAÇÃO E RESERVA
+                </h4>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc", padding: "16px 20px", borderRadius: 8, border: "1px solid #cbd5e1", marginBottom: 24 }}>
+                <div>
+                  <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", fontWeight: 700 }}>Código de Acompanhamento</div>
+                  <div style={{ fontSize: 24, fontWeight: 900, color: "#006633", letterSpacing: 2 }}>{ticket.codigo}</div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", fontWeight: 700 }}>Situação Atual</div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: ticket.status === "ACEITO" ? "#006633" : "#003366" }}>
+                    {cfg?.icone} {cfg?.label.toUpperCase()}
+                  </div>
+                </div>
+              </div>
+
+              <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 24 }}>
+                <tbody>
+                  {[
+                    ["Título do Evento", ticket.tituloEvento],
+                    ["Tipo de Serviço", ticket.tipo === "TRANSMISSAO_EXTERNA" ? "Transmissão Externa (Prédios UFSM)" : "Mini Auditório (Prédio 14, Sala 109)"],
+                    ["Solicitante", `${ticket.nomeSolicitante} (${ticket.emailSolicitante})`],
+                    ["Data / Hora Início", formatarData(ticket.dataInicio)],
+                    ["Data / Hora Fim", formatarData(ticket.dataFim)],
+                    ["Local do Evento", ticket.local],
+                    ["Data de Emissão da Solicitação", formatarData(ticket.criadoEm)],
+                  ].map(([label, valor]) => (
+                    <tr key={label as string} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                      <td style={{ padding: "10px 12px", fontWeight: 700, color: "#334155", width: "35%", background: "#f1f5f9" }}>{label}</td>
+                      <td style={{ padding: "10px 12px", color: "#0f172a" }}>{valor}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {ticket.descricao && (
+                <div style={{ marginBottom: 24, padding: 16, background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: 8 }}>
+                  <div style={{ fontWeight: 700, color: "#334155", marginBottom: 4, fontSize: 12, textTransform: "uppercase" }}>Descrição / Observações</div>
+                  <div style={{ color: "#334155", fontSize: 13, lineHeight: 1.5 }}>{ticket.descricao}</div>
+                </div>
+              )}
+
+              <div style={{ marginTop: 40, paddingTop: 16, borderTop: "1px solid #cbd5e1", fontSize: 11, color: "#64748b", textAlign: "center" }}>
+                Documento emitido automaticamente pelo sistema Agenda Multiweb – Coordenadoria de Tecnologia Educacional (CTE/UFSM).
+                <br />
+                Para verificar a autenticidade ou atualizar o status, acesse <strong>agenda.cte.edu</strong> e informe o código <strong>{ticket.codigo}</strong>.
+              </div>
+            </div>
           </div>
         )}
       </div>

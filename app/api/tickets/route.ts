@@ -29,6 +29,21 @@ export async function POST(request: Request) {
       );
     }
 
+    // Verificar antecedência mínima configurada no sistema (padrão 48 horas)
+    const cfgAntecedencia = await prisma.configuracao.findUnique({
+      where: { chave: "antecedencia_minima_horas" },
+    });
+    const horasMinimas = parseInt(cfgAntecedencia?.valor ?? "48");
+    if (horasMinimas > 0) {
+      const dataMinima = new Date(Date.now() + horasMinimas * 3600 * 1000);
+      if (new Date(dados.dataInicio) < dataMinima) {
+        return Response.json(
+          { erro: `As solicitações de evento exigem antecedência mínima de ${horasMinimas} horas.` },
+          { status: 400 }
+        );
+      }
+    }
+
     // Mini Auditório sempre no Prédio 14, Sala 109
     const local =
       dados.tipo === "MINI_AUDITORIO"

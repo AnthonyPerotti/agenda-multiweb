@@ -200,6 +200,26 @@ export default function ConfiguracoesPage() {
           </div>
 
           <div className="card" style={{ marginBottom: 20 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#f0f4ff", marginBottom: 16 }}>⏱️ Regras de Antecedência para Agendamento</h3>
+            <div>
+              <label className="label">Antecedência Mínima de Solicitação (em horas)</label>
+              <input
+                className="input"
+                type="number"
+                min="0"
+                max="720"
+                value={configs.antecedencia_minima_horas ?? "48"}
+                onChange={(e) => atualizar("antecedencia_minima_horas", e.target.value)}
+                placeholder="48"
+                style={{ maxWidth: 200 }}
+              />
+              <p style={{ fontSize: 12, color: "#64748b", marginTop: 6 }}>
+                Define quantas horas de antecedência o público deve ter para abrir um ticket (padrão: 48h). Digite 0 para desativar a restrição.
+              </p>
+            </div>
+          </div>
+
+          <div className="card" style={{ marginBottom: 20 }}>
             <h3 style={{ fontSize: 15, fontWeight: 700, color: "#f0f4ff", marginBottom: 16 }}>🧪 Testar Conexão</h3>
             <div style={{ display: "flex", gap: 12 }}>
               <input
