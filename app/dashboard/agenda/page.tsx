@@ -44,6 +44,19 @@ export default function AgendaPage() {
   const [editForm, setEditForm] = useState<Partial<Evento>>({});
   const [salvando, setSalvando] = useState(false);
 
+  // Estado do Modal de Criar Evento Manual
+  const [modalNovoEvento, setModalNovoEvento] = useState(false);
+  const [novoEvento, setNovoEvento] = useState({
+    titulo: "",
+    tipo: "TRANSMISSAO_EXTERNA",
+    dataInicio: "",
+    dataFim: "",
+    local: "",
+    descricao: "",
+  });
+  const [criandoManual, setCriandoManual] = useState(false);
+  const [erroManual, setErroManual] = useState("");
+
   const buscarEventos = useCallback(async () => {
     setCarregando(true);
     try {
@@ -119,6 +132,40 @@ export default function AgendaPage() {
     await buscarEventos();
   };
 
+  // Criar evento manual
+  const criarEventoManual = async () => {
+    setErroManual("");
+    if (!novoEvento.titulo || !novoEvento.dataInicio || !novoEvento.dataFim || !novoEvento.local) {
+      setErroManual("Preencha todos os campos obrigatórios");
+      return;
+    }
+    setCriandoManual(true);
+    try {
+      const res = await fetch("/api/eventos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          titulo: novoEvento.titulo,
+          tipo: novoEvento.tipo,
+          dataInicio: new Date(novoEvento.dataInicio).toISOString(),
+          dataFim: new Date(novoEvento.dataFim).toISOString(),
+          local: novoEvento.local,
+          descricao: novoEvento.descricao,
+        }),
+      });
+      if (res.ok) {
+        setModalNovoEvento(false);
+        setNovoEvento({ titulo: "", tipo: "TRANSMISSAO_EXTERNA", dataInicio: "", dataFim: "", local: "", descricao: "" });
+        await buscarEventos();
+      } else {
+        const data = await res.json();
+        setErroManual(data.erro ?? "Erro ao criar evento");
+      }
+    } finally {
+      setCriandoManual(false);
+    }
+  };
+
   // Calendário mensal
   const renderMes = () => {
     const primeiroDia = new Date(dataAtual.getFullYear(), dataAtual.getMonth(), 1);
@@ -134,13 +181,11 @@ export default function AgendaPage() {
 
     return (
       <div>
-        {/* Cabeçalho dos dias */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 1, marginBottom: 1 }}>
           {DIAS_SEMANA.map((d) => (
             <div key={d} style={{ textAlign: "center", padding: "8px 0", fontSize: 12, fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>{d}</div>
           ))}
         </div>
-        {/* Grid de dias */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 1 }}>
           {diasGrid.map((dia, i) => {
             const mesAtual = dia.getMonth() === dataAtual.getMonth();
@@ -271,7 +316,12 @@ export default function AgendaPage() {
             <span className="badge badge-auditorio">🎤 Mini Auditório</span>
           </div>
         </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+          {/* Botão Novo Evento Manual */}
+          <button className="btn btn-primary" onClick={() => setModalNovoEvento(true)} style={{ fontSize: 13, gap: 6 }}>
+            ➕ Novo Evento Manual
+          </button>
+
           {/* Seletor de view */}
           <div style={{ display: "flex", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden" }}>
             {(["dia", "semana", "mes"] as const).map((v) => (
@@ -313,7 +363,100 @@ export default function AgendaPage() {
         ) : view === "mes" ? renderMes() : view === "semana" ? renderSemana() : renderDia()}
       </div>
 
-      {/* Modal de evento */}
+      {/* Modal de Criar Evento Manual */}
+      {modalNovoEvento && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 24 }}>
+          <div className="glass-card fade-in" style={{ maxWidth: 540, width: "100%", padding: 32, maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 800, color: "#f0f4ff" }}>➕ Adicionar Evento Manual</h2>
+              <button onClick={() => setModalNovoEvento(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b", fontSize: 20 }}>✕</button>
+            </div>
+
+            {erroManual && (
+              <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, padding: "10px 14px", color: "#f87171", marginBottom: 16, fontSize: 13 }}>
+                ⚠️ {erroManual}
+              </div>
+            )}
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div>
+                <label className="label">Título do Evento *</label>
+                <input
+                  className="input"
+                  value={novoEvento.titulo}
+                  onChange={(e) => setNovoEvento(p => ({ ...p, titulo: e.target.value }))}
+                  placeholder="ex: Transmissão da Aula Inaugural / Evento Interno CTE"
+                />
+              </div>
+
+              <div>
+                <label className="label">Tipo de Serviço *</label>
+                <select
+                  className="input"
+                  value={novoEvento.tipo}
+                  onChange={(e) => setNovoEvento(p => ({ ...p, tipo: e.target.value }))}
+                >
+                  <option value="TRANSMISSAO_EXTERNA">📡 Transmissão Externa (Prédios UFSM)</option>
+                  <option value="MINI_AUDITORIO">🎤 Mini Auditório (Prédio 14, Sala 109)</option>
+                </select>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label className="label">Data & Hora de Início *</label>
+                  <input
+                    className="input"
+                    type="datetime-local"
+                    value={novoEvento.dataInicio}
+                    onChange={(e) => setNovoEvento(p => ({ ...p, dataInicio: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="label">Data & Hora de Fim *</label>
+                  <input
+                    className="input"
+                    type="datetime-local"
+                    value={novoEvento.dataFim}
+                    onChange={(e) => setNovoEvento(p => ({ ...p, dataFim: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="label">Local *</label>
+                <input
+                  className="input"
+                  value={novoEvento.local}
+                  onChange={(e) => setNovoEvento(p => ({ ...p, local: e.target.value }))}
+                  placeholder="ex: Prédio 14, Sala 109 ou Auditório do CT"
+                />
+              </div>
+
+              <div>
+                <label className="label">Descrição / Observações (opcional)</label>
+                <textarea
+                  className="input"
+                  value={novoEvento.descricao}
+                  onChange={(e) => setNovoEvento(p => ({ ...p, descricao: e.target.value }))}
+                  rows={3}
+                  placeholder="Detalhes adicionais do evento presencial ou agendamento interno..."
+                />
+              </div>
+
+              <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
+                <button className="btn btn-secondary" onClick={() => setModalNovoEvento(false)} style={{ flex: 1 }}>
+                  Cancelar
+                </button>
+                <button className="btn btn-primary" onClick={criarEventoManual} disabled={criandoManual} style={{ flex: 1 }}>
+                  {criandoManual ? "⏳ Criando..." : "Salvar na Agenda"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Visualizar/Editar Evento */}
       {eventoModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 24 }}>
           <div className="glass-card" style={{ maxWidth: 560, width: "100%", padding: 32, maxHeight: "90vh", overflowY: "auto" }}>

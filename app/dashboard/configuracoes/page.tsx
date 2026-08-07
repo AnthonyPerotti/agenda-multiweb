@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
 
 interface Config {
   chave: string;
@@ -111,7 +112,7 @@ export default function ConfiguracoesPage() {
   return (
     <div style={{ padding: "32px 32px 64px", maxWidth: 900 }}>
       <h1 style={{ fontSize: 24, fontWeight: 800, color: "#f0f4ff", marginBottom: 8 }}>⚙️ Configurações</h1>
-      <p style={{ color: "#64748b", fontSize: 14, marginBottom: 28 }}>Configure SMTP, templates de e-mail e integrações</p>
+      <p style={{ color: "#64748b", fontSize: 14, marginBottom: 28 }}>Configure SMTP, templates de e-mail e dados da conta de acesso</p>
 
       {/* Abas */}
       <div style={{ display: "flex", gap: 4, borderBottom: "1px solid var(--border)", marginBottom: 28 }}>
@@ -119,7 +120,7 @@ export default function ConfiguracoesPage() {
           { k: "smtp", l: "📧 Servidor de E-mail" },
           { k: "templates", l: "✉️ Templates" },
           { k: "google", l: "🗓️ Google Calendar" },
-          { k: "usuario", l: "👤 Usuário / Senha" },
+          { k: "usuario", l: "👤 Usuário & Acesso" },
         ].map(({ k, l }) => (
           <button
             key={k}
@@ -226,7 +227,6 @@ export default function ConfiguracoesPage() {
       {/* ─── Aba Templates ─── */}
       {aba === "templates" && (
         <div className="fade-in">
-          {/* Seletor de template */}
           <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
             {TEMPLATES.map((t) => (
               <button
@@ -328,12 +328,99 @@ export default function ConfiguracoesPage() {
         </div>
       )}
 
-      {/* ─── Aba Usuário ─── */}
+      {/* ─── Aba Usuário & Acesso ─── */}
       {aba === "usuario" && (
-        <div className="fade-in">
+        <div className="fade-in" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+          <AlterarEmail />
           <AlterarSenha />
         </div>
       )}
+    </div>
+  );
+}
+
+function AlterarEmail() {
+  const { data: session, update } = useSession();
+  const [novoEmail, setNovoEmail] = useState("");
+  const [senhaAtual, setSenhaAtual] = useState("");
+  const [feedback, setFeedback] = useState<{ tipo: "sucesso" | "erro"; mensagem: string } | null>(null);
+  const [salvando, setSalvando] = useState(false);
+
+  useEffect(() => {
+    if (session?.user?.email) {
+      setNovoEmail(session.user.email);
+    }
+  }, [session]);
+
+  const salvar = async () => {
+    if (!novoEmail || !senhaAtual) {
+      setFeedback({ tipo: "erro", mensagem: "Preencha o novo e-mail e a senha atual" });
+      return;
+    }
+    setSalvando(true);
+    setFeedback(null);
+    try {
+      const res = await fetch("/api/usuarios/alterar-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ novoEmail, senhaAtual }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setFeedback({ tipo: "sucesso", mensagem: "E-mail de login atualizado com sucesso!" });
+        setSenhaAtual("");
+        await update();
+      } else {
+        setFeedback({ tipo: "erro", mensagem: data.erro ?? "Erro ao alterar e-mail" });
+      }
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  return (
+    <div className="card">
+      <h3 style={{ fontSize: 16, fontWeight: 700, color: "#f0f4ff", marginBottom: 8 }}>✉️ Alterar E-mail de Login</h3>
+      <p style={{ color: "#64748b", fontSize: 13, marginBottom: 20 }}>
+        E-mail atual de login da equipe: <strong style={{ color: "#4ade80" }}>{session?.user?.email}</strong>
+      </p>
+
+      {feedback && (
+        <div style={{
+          background: feedback.tipo === "sucesso" ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
+          border: `1px solid ${feedback.tipo === "sucesso" ? "rgba(34,197,94,0.3)" : "rgba(239,68,68,0.3)"}`,
+          borderRadius: 8, padding: "10px 14px", color: feedback.tipo === "sucesso" ? "#4ade80" : "#f87171",
+          marginBottom: 16, fontSize: 13,
+        }}>
+          {feedback.tipo === "sucesso" ? "✅" : "⚠️"} {feedback.mensagem}
+        </div>
+      )}
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div>
+          <label className="label">Novo E-mail de Login</label>
+          <input
+            className="input"
+            type="email"
+            value={novoEmail}
+            onChange={(e) => setNovoEmail(e.target.value)}
+            placeholder="ex: novo_email@ufsm.br"
+          />
+        </div>
+        <div>
+          <label className="label">Senha Atual (para confirmar)</label>
+          <input
+            className="input"
+            type="password"
+            value={senhaAtual}
+            onChange={(e) => setSenhaAtual(e.target.value)}
+            placeholder="••••••••"
+          />
+        </div>
+        <button className="btn btn-primary" onClick={salvar} disabled={salvando || !novoEmail || !senhaAtual}>
+          {salvando ? "⏳ Atualizando..." : "Atualizar E-mail"}
+        </button>
+      </div>
     </div>
   );
 }
@@ -353,6 +440,7 @@ function AlterarSenha() {
       return;
     }
     setSalvando(true);
+    setFeedback(null);
     try {
       const res = await fetch("/api/usuarios/alterar-senha", {
         method: "POST",
@@ -372,8 +460,8 @@ function AlterarSenha() {
   };
 
   return (
-    <div className="card" style={{ maxWidth: 480 }}>
-      <h3 style={{ fontSize: 16, fontWeight: 700, color: "#f0f4ff", marginBottom: 20 }}>👤 Alterar Senha</h3>
+    <div className="card">
+      <h3 style={{ fontSize: 16, fontWeight: 700, color: "#f0f4ff", marginBottom: 20 }}>🔑 Alterar Senha</h3>
       {feedback && (
         <div style={{
           background: feedback.tipo === "sucesso" ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
