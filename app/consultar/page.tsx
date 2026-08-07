@@ -125,7 +125,7 @@ function ConsultarContent() {
         borderBottom: "1px solid rgba(0,102,51,0.3)",
         padding: "0 24px",
       }}>
-        <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64 }}>
+        <div style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64 }}>
           <button onClick={() => router.push("/")} style={{ display: "flex", alignItems: "center", gap: 10, background: "none", border: "none", cursor: "pointer" }}>
             <div style={{ width: 32, height: 32, background: "linear-gradient(135deg,#006633,#008040)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>📅</div>
             <span style={{ fontWeight: 700, color: "#f0f4ff", fontSize: 15 }}>Agenda Multiweb</span>

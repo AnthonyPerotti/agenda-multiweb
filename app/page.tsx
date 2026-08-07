@@ -264,8 +264,7 @@ export default function HomePage() {
       >
         <div
           style={{
-            maxWidth: 1100,
-            margin: "0 auto",
+            width: "100%",
             display: "flex",
             alignItems: "center",
             justify: "space-between",
