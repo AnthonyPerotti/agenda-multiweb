@@ -340,7 +340,7 @@ export default function HomePage() {
             <span style={{ color: "#60a5fa" }}>reserva</span>
           </h1>
           <p style={{ color: "#94a3b8", fontSize: 16, maxWidth: 600, margin: "0 auto 32px" }}>
-            APreencha o formulário abaixo para solicitar transmissões ao vivo ou reservar o Mini Auditório da CTE/UFSM.
+            Preencha o formulário abaixo para solicitar transmissões ao vivo ou reservar o Mini Auditório da CTE/UFSM.
           </p>
 
           {/* Seleção do Tipo de Serviço */}
