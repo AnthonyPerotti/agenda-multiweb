@@ -34,15 +34,20 @@ export async function POST(request: Request) {
 
     const calendar = google.calendar({ version: "v3", auth: authClient });
 
-    // Testar leitura das propriedades da agenda ou listar eventos
-    const res = await calendar.events.list({
-      calendarId,
-      maxResults: 1,
-    });
+    // Verificar permissoes da Service Account na agenda (writer ou owner)
+    const calList = await calendar.calendarList.get({ calendarId });
+    const accessRole = calList.data.accessRole;
+
+    if (accessRole !== "writer" && accessRole !== "owner") {
+      return Response.json({
+        sucesso: false,
+        erro: `A Service Account possui apenas permissão de LEITURA (accessRole: ${accessRole}). No Google Calendar, altere a permissão compartilhada para 'Fazer alterações nos eventos'.`,
+      });
+    }
 
     return Response.json({
       sucesso: true,
-      mensagem: `Conexão estabelecida com sucesso! A agenda "${res.data.summary || calendarId}" foi acessada com sucesso. 🎉`,
+      mensagem: `Conexão estabelecida com sucesso! A agenda "${calList.data.summary || calendarId}" foi acessada com permissão de ESCRITA (escrita liberada). 🎉`,
     });
   } catch (err) {
     const errorMsg = (err as Error).message || "Erro desconhecido ao conectar";
