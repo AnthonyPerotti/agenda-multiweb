@@ -1,9 +1,9 @@
 # ============================================================
 # Dockerfile — Agenda Multiweb (CTE/UFSM)
-# Build multi-stage para imagem mínima e segura
+# Otimizado para Next.js 16 + Prisma v7
 # ============================================================
 
-# ─── Stage 1: Dependências ───────────────────────────────────
+# ─── Stage 1: Dependências do Build ──────────────────────────
 FROM node:20-alpine AS deps
 WORKDIR /app
 
@@ -14,7 +14,7 @@ COPY package*.json ./
 COPY prisma ./prisma/
 COPY prisma.config.ts ./
 
-RUN npm ci --only=production
+RUN npm install
 
 # ─── Stage 2: Builder ────────────────────────────────────────
 FROM node:20-alpine AS builder
@@ -36,7 +36,7 @@ RUN npx prisma generate
 # Build do Next.js
 RUN npm run build
 
-# ─── Stage 3: Runner (imagem final mínima) ────────────────────
+# ─── Stage 3: Runner (Imagem final de produção) ─────────────
 FROM node:20-alpine AS runner
 WORKDIR /app
 
@@ -49,7 +49,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copiar artefatos do build
+# Copiar artefatos do build Next.js standalone
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
