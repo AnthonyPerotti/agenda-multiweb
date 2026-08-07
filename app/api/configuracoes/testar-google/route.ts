@@ -8,7 +8,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { calendarId, credentialsJson } = body;
+    const { calendarId, credentialsJson, impersonatedEmail } = body;
 
     if (!calendarId || !credentialsJson) {
       return Response.json(
@@ -29,6 +29,7 @@ export async function POST(request: Request) {
 
     const authClient = new google.auth.GoogleAuth({
       credentials,
+      clientOptions: impersonatedEmail?.trim() ? { subject: impersonatedEmail.trim() } : undefined,
       scopes: ["https://www.googleapis.com/auth/calendar"],
     });
 

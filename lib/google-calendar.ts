@@ -7,10 +7,12 @@ import { prisma } from "./prisma";
 async function getGoogleConfig(): Promise<{
   calendarId: string;
   credentials: Record<string, unknown>;
+  impersonatedEmail?: string;
 } | null> {
-  const [calendarIdCfg, credentialsCfg] = await Promise.all([
+  const [calendarIdCfg, credentialsCfg, impersonatedCfg] = await Promise.all([
     prisma.configuracao.findUnique({ where: { chave: "google_calendar_id" } }),
     prisma.configuracao.findUnique({ where: { chave: "google_credentials" } }),
+    prisma.configuracao.findUnique({ where: { chave: "google_impersonated_email" } }),
   ]);
 
   if (!calendarIdCfg?.valor || !credentialsCfg?.valor) return null;
@@ -19,6 +21,7 @@ async function getGoogleConfig(): Promise<{
     return {
       calendarId: calendarIdCfg.valor,
       credentials: JSON.parse(credentialsCfg.valor),
+      impersonatedEmail: impersonatedCfg?.valor?.trim() || undefined,
     };
   } catch {
     return null;
@@ -34,6 +37,7 @@ async function getCalendarClient() {
 
   const auth = new google.auth.GoogleAuth({
     credentials: config.credentials,
+    clientOptions: config.impersonatedEmail ? { subject: config.impersonatedEmail } : undefined,
     scopes: ["https://www.googleapis.com/auth/calendar"],
   });
 

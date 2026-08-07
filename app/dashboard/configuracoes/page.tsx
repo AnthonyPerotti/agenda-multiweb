@@ -114,6 +114,7 @@ export default function ConfiguracoesPage() {
         body: JSON.stringify({
           calendarId: configs.google_calendar_id,
           credentialsJson: configs.google_credentials,
+          impersonatedEmail: configs.google_impersonated_email,
         }),
       });
       const data = await res.json();
@@ -358,6 +359,19 @@ export default function ConfiguracoesPage() {
                 />
                 <p style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
                   Encontrado em: Configurações da Agenda → Integrar agenda → ID da agenda
+                </p>
+              </div>
+              <div>
+                <label className="label">E-mail a Personificar (Domain-Wide Delegation — Opcional)</label>
+                <input
+                  className="input"
+                  type="email"
+                  value={configs.google_impersonated_email ?? ""}
+                  onChange={(e) => atualizar("google_impersonated_email", e.target.value)}
+                  placeholder="ex: anthony.souza@cead.ufsm.br ou multiweb@cead.ufsm.br"
+                />
+                <p style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
+                  Utilizado quando o suporte ativa a Delegação em todo o domínio (Option 2). A Service Account atuará em nome deste e-mail institucional.
                 </p>
               </div>
               <div>
