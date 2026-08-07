@@ -61,7 +61,7 @@ model Ticket {
 
   mensagens        Mensagem[]
   historico        HistoricoAcao[]
-  evento           Evento?
+  eventos          Evento[]
 }
 
 enum TipoSolicitacao {
@@ -120,8 +120,8 @@ model HistoricoAcao {
 
 model Evento {
   id            String          @id @default(cuid())
-  ticketId      String?         @unique
-  ticket        Ticket?         @relation(fields: [ticketId], references: [id])
+  ticketId      String?
+  ticket        Ticket?         @relation(fields: [ticketId], references: [id], onDelete: SetNull)
 
   titulo        String
   descricao     String?

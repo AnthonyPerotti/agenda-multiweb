@@ -32,21 +32,38 @@ export async function PATCH(request: Request, { params }: Params) {
     data: { ...(dados.status ? { status: dados.status } : {}) },
   });
 
-  // Se o status for alterado para ACEITO, garantir que o evento seja criado na agenda
+  // Se o status for alterado para ACEITO, garantir que os eventos sejam criados na agenda
   if (dados.status === "ACEITO") {
-    const eventoExistente = await prisma.evento.findUnique({ where: { ticketId: id } });
-    if (!eventoExistente) {
-      await prisma.evento.create({
-        data: {
-          ticketId: ticket.id,
-          titulo: ticket.tituloEvento,
-          descricao: ticket.descricao,
-          dataInicio: ticket.dataInicio,
-          dataFim: ticket.dataFim,
-          local: ticket.local,
-          tipo: ticket.tipo,
-        },
-      });
+    const eventosExistentes = await prisma.evento.findMany({ where: { ticketId: id } });
+    if (eventosExistentes.length === 0) {
+      let diasParaCriar = [{ dataInicio: ticket.dataInicio, dataFim: ticket.dataFim }];
+      if (ticket.anexosLinks) {
+        try {
+          const parsedMeta = JSON.parse(ticket.anexosLinks);
+          if (Array.isArray(parsedMeta.diasAgendamento) && parsedMeta.diasAgendamento.length > 0) {
+            diasParaCriar = parsedMeta.diasAgendamento.map((d: { dataInicio: string; dataFim: string }) => ({
+              dataInicio: new Date(d.dataInicio),
+              dataFim: new Date(d.dataFim),
+            }));
+          }
+        } catch {
+          // anexosLinks é um link/texto comum
+        }
+      }
+
+      for (const item of diasParaCriar) {
+        await prisma.evento.create({
+          data: {
+            ticketId: ticket.id,
+            titulo: ticket.tituloEvento,
+            descricao: ticket.descricao,
+            dataInicio: item.dataInicio,
+            dataFim: item.dataFim,
+            local: ticket.local,
+            tipo: ticket.tipo,
+          },
+        });
+      }
     }
   }
 

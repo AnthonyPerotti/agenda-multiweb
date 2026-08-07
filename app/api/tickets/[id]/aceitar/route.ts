@@ -59,18 +59,39 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  // Criar o evento na agenda local
-  const evento = await prisma.evento.create({
-    data: {
-      ticketId: ticket.id,
-      titulo: ticket.tituloEvento,
-      descricao: ticket.descricao,
-      dataInicio: ticket.dataInicio,
-      dataFim: ticket.dataFim,
-      local: ticket.local,
-      tipo: ticket.tipo,
-    },
-  });
+  // Verificar se existem múltiplos dias no ticket
+  let diasParaCriar = [{ dataInicio: ticket.dataInicio, dataFim: ticket.dataFim }];
+  if (ticket.anexosLinks) {
+    try {
+      const parsedMeta = JSON.parse(ticket.anexosLinks);
+      if (Array.isArray(parsedMeta.diasAgendamento) && parsedMeta.diasAgendamento.length > 0) {
+        diasParaCriar = parsedMeta.diasAgendamento.map((d: { dataInicio: string; dataFim: string }) => ({
+          dataInicio: new Date(d.dataInicio),
+          dataFim: new Date(d.dataFim),
+        }));
+      }
+    } catch {
+      // anexosLinks é um texto/link normal
+    }
+  }
+
+  // Criar os eventos na agenda local para cada dia
+  const eventosCriados = [];
+  for (const item of diasParaCriar) {
+    const evento = await prisma.evento.create({
+      data: {
+        ticketId: ticket.id,
+        titulo: ticket.tituloEvento,
+        descricao: ticket.descricao,
+        dataInicio: item.dataInicio,
+        dataFim: item.dataFim,
+        local: ticket.local,
+        tipo: ticket.tipo,
+      },
+    });
+    eventosCriados.push(evento);
+  }
+  const evento = eventosCriados[0];
 
   // Tentar sincronizar com Google Calendar
   let googleEventId: string | null = null;

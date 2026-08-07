@@ -149,8 +149,23 @@ export default function HomePage() {
         ? `📅 CRONOGRAMA DE MÚLTIPLOS DIAS:\n${detalhamentoDiasTexto}\n\n${form.descricao}`
         : form.descricao;
 
+      let anexosLinksMeta = form.anexosLinks;
+      if (multiplosDias) {
+        const diasValidos = diasLista.filter((d) => d.data && d.horaInicio && d.horaFim);
+        diasValidos.sort((a, b) => new Date(`${a.data}T${a.horaInicio}`).getTime() - new Date(`${b.data}T${b.horaInicio}`).getTime());
+
+        anexosLinksMeta = JSON.stringify({
+          diasAgendamento: diasValidos.map((d) => ({
+            dataInicio: new Date(`${d.data}T${d.horaInicio}`).toISOString(),
+            dataFim: new Date(`${d.data}T${d.horaFim}`).toISOString(),
+          })),
+          linkOriginal: form.anexosLinks || null,
+        });
+      }
+
       const payload = {
         ...form,
+        anexosLinks: anexosLinksMeta,
         descricao: descricaoFinal,
         tipo,
         local: tipo === "MINI_AUDITORIO" ? "Prédio 14, Sala 109 – CTE/UFSM" : form.local,

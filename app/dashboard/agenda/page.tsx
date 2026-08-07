@@ -163,7 +163,10 @@ export default function AgendaPage() {
     eventos.filter((e) => {
       const inicio = new Date(e.dataInicio);
       const fim = new Date(e.dataFim);
-      return inicio <= dia && fim >= dia || isMesmoDay(inicio, dia);
+      if (isMesmoDay(inicio, fim)) {
+        return isMesmoDay(inicio, dia);
+      }
+      return isMesmoDay(inicio, dia) || isMesmoDay(fim, dia) || (inicio <= dia && fim >= dia);
     });
 
   // Salvar edição de evento
