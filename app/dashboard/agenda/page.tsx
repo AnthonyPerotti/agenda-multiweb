@@ -23,6 +23,16 @@ interface EventoModal {
   editando: boolean;
 }
 
+interface EditFormState {
+  titulo: string;
+  tipo: string;
+  local: string;
+  descricao: string;
+  data: string;
+  horaInicio: string;
+  horaFim: string;
+}
+
 function formatarHora(data: string) {
   return new Date(data).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 }
@@ -62,16 +72,27 @@ export default function AgendaPage() {
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [carregando, setCarregando] = useState(false);
   const [eventoModal, setEventoModal] = useState<EventoModal | null>(null);
-  const [editForm, setEditForm] = useState<Partial<Evento>>({});
   const [salvando, setSalvando] = useState(false);
+
+  // Estado do formulário de edição de evento existente
+  const [editForm, setEditForm] = useState<EditFormState>({
+    titulo: "",
+    tipo: "TRANSMISSAO_EXTERNA",
+    local: "",
+    descricao: "",
+    data: "",
+    horaInicio: "08:00",
+    horaFim: "12:00",
+  });
 
   // Estado do Modal de Criar Evento Manual
   const [modalNovoEvento, setModalNovoEvento] = useState(false);
   const [novoEvento, setNovoEvento] = useState({
     titulo: "",
     tipo: "TRANSMISSAO_EXTERNA",
-    dataInicio: "",
-    dataFim: "",
+    data: "",
+    horaInicio: "08:00",
+    horaFim: "12:00",
     local: "",
     descricao: "",
   });
@@ -103,6 +124,28 @@ export default function AgendaPage() {
 
   const hoje = new Date();
 
+  // Abrir modal de visualizar ou editar evento
+  const abrirEventoModal = (ev: Evento, editando = false) => {
+    const dtInicio = new Date(ev.dataInicio);
+    const dtFim = new Date(ev.dataFim);
+
+    const pad = (n: number) => n.toString().padStart(2, "0");
+    const dataStr = `${dtInicio.getFullYear()}-${pad(dtInicio.getMonth() + 1)}-${pad(dtInicio.getDate())}`;
+    const horaInicioStr = `${pad(dtInicio.getHours())}:${pad(dtInicio.getMinutes())}`;
+    const horaFimStr = `${pad(dtFim.getHours())}:${pad(dtFim.getMinutes())}`;
+
+    setEditForm({
+      titulo: ev.titulo,
+      tipo: ev.tipo,
+      local: ev.local,
+      descricao: ev.descricao ?? "",
+      data: dataStr,
+      horaInicio: horaInicioStr,
+      horaFim: horaFimStr,
+    });
+    setEventoModal({ evento: ev, editando });
+  };
+
   // Título do período atual
   const tituloPeriodo = () => {
     if (view === "mes") return `${MESES[dataAtual.getMonth()]} ${dataAtual.getFullYear()}`;
@@ -125,18 +168,22 @@ export default function AgendaPage() {
 
   // Salvar edição de evento
   const salvarEvento = async () => {
-    if (!eventoModal) return;
+    if (!eventoModal || !editForm.data || !editForm.horaInicio || !editForm.horaFim) return;
     setSalvando(true);
     try {
+      const dataInicioISO = new Date(`${editForm.data}T${editForm.horaInicio}`).toISOString();
+      const dataFimISO = new Date(`${editForm.data}T${editForm.horaFim}`).toISOString();
+
       await fetch(`/api/eventos/${eventoModal.evento.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           titulo: editForm.titulo,
-          descricao: editForm.descricao,
+          tipo: editForm.tipo,
           local: editForm.local,
-          dataInicio: editForm.dataInicio,
-          dataFim: editForm.dataFim,
+          descricao: editForm.descricao,
+          dataInicio: dataInicioISO,
+          dataFim: dataFimISO,
         }),
       });
       setEventoModal(null);
@@ -235,7 +282,7 @@ export default function AgendaPage() {
                     key={ev.id}
                     className={`cal-event ${getEventClass(ev.tipo)}`}
                     style={{ marginBottom: 2 }}
-                    onClick={() => { setEventoModal({ evento: ev, editando: false }); setEditForm(ev); }}
+                    onClick={() => abrirEventoModal(ev, false)}
                     title={`${ev.titulo} — ${formatarHora(ev.dataInicio)}`}
                   >
                     {formatarHora(ev.dataInicio)} {ev.titulo}
@@ -274,7 +321,7 @@ export default function AgendaPage() {
                   <div
                     key={ev.id}
                     className={`cal-event ${getEventClass(ev.tipo)}`}
-                    onClick={() => { setEventoModal({ evento: ev, editando: false }); setEditForm(ev); }}
+                    onClick={() => abrirEventoModal(ev, false)}
                     style={{ whiteSpace: "normal", fontSize: 11 }}
                   >
                     <div style={{ fontWeight: 700 }}>{formatarHora(ev.dataInicio)}</div>
@@ -309,7 +356,7 @@ export default function AgendaPage() {
                 key={ev.id}
                 className="card"
                 style={{ borderLeft: `4px solid ${ev.tipo === "TRANSMISSAO_EXTERNA" ? "#0ea5e9" : ev.tipo === "MINI_AUDITORIO" ? "#a855f7" : "#f5a623"}`, cursor: "pointer" }}
-                onClick={() => { setEventoModal({ evento: ev, editando: false }); setEditForm(ev); }}
+                onClick={() => abrirEventoModal(ev, false)}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                   <div>
@@ -496,44 +543,93 @@ export default function AgendaPage() {
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 24 }}>
           <div className="glass-card" style={{ maxWidth: 560, width: "100%", padding: 32, maxHeight: "90vh", overflowY: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
-              <span className={`badge ${getBadgeClass(eventoModal.evento.tipo)}`}>
-                {getTipoLabel(eventoModal.evento.tipo)}
+              <span className={`badge ${getBadgeClass(eventoModal.editando ? editForm.tipo : eventoModal.evento.tipo)}`}>
+                {getTipoLabel(eventoModal.editando ? editForm.tipo : eventoModal.evento.tipo)}
               </span>
               <button onClick={() => setEventoModal(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b", fontSize: 20 }}>✕</button>
             </div>
 
             {eventoModal.editando ? (
-              // Formulário de edição
+              // Formulário de edição de evento existente
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 <div>
-                  <label className="label">Título</label>
-                  <input className="input" value={editForm.titulo ?? ""} onChange={(e) => setEditForm(p => ({ ...p, titulo: e.target.value }))} />
+                  <label className="label">Título do Evento *</label>
+                  <input
+                    className="input"
+                    value={editForm.titulo}
+                    onChange={(e) => setEditForm(p => ({ ...p, titulo: e.target.value }))}
+                  />
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+
+                <div>
+                  <label className="label">Tipo de Serviço *</label>
+                  <select
+                    className="input"
+                    value={editForm.tipo}
+                    onChange={(e) => setEditForm(p => ({ ...p, tipo: e.target.value }))}
+                  >
+                    <option value="TRANSMISSAO_EXTERNA">📡 Transmissão Externa (Prédios UFSM)</option>
+                    <option value="MINI_AUDITORIO">🎤 Mini Auditório (Prédio 14, Sala 109)</option>
+                    <option value="COLACAO_FORMATURA">🎓 Gravação de Formatura / Colação de Grau</option>
+                  </select>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr", gap: 12 }}>
                   <div>
-                    <label className="label">Início</label>
-                    <input className="input" type="datetime-local" value={editForm.dataInicio ? new Date(editForm.dataInicio).toISOString().slice(0, 16) : ""} onChange={(e) => setEditForm(p => ({ ...p, dataInicio: new Date(e.target.value).toISOString() }))} />
+                    <label className="label">Data do Evento *</label>
+                    <input
+                      className="input"
+                      type="date"
+                      value={editForm.data}
+                      onChange={(e) => setEditForm(p => ({ ...p, data: e.target.value }))}
+                    />
                   </div>
                   <div>
-                    <label className="label">Fim</label>
-                    <input className="input" type="datetime-local" value={editForm.dataFim ? new Date(editForm.dataFim).toISOString().slice(0, 16) : ""} onChange={(e) => setEditForm(p => ({ ...p, dataFim: new Date(e.target.value).toISOString() }))} />
+                    <label className="label">Hora Início *</label>
+                    <input
+                      className="input"
+                      type="time"
+                      value={editForm.horaInicio}
+                      onChange={(e) => setEditForm(p => ({ ...p, horaInicio: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Hora Fim *</label>
+                    <input
+                      className="input"
+                      type="time"
+                      value={editForm.horaFim}
+                      onChange={(e) => setEditForm(p => ({ ...p, horaFim: e.target.value }))}
+                    />
                   </div>
                 </div>
+
                 <div>
-                  <label className="label">Local</label>
-                  <input className="input" value={editForm.local ?? ""} onChange={(e) => setEditForm(p => ({ ...p, local: e.target.value }))} />
+                  <label className="label">Local *</label>
+                  <input
+                    className="input"
+                    value={editForm.local}
+                    onChange={(e) => setEditForm(p => ({ ...p, local: e.target.value }))}
+                  />
                 </div>
+
                 <div>
-                  <label className="label">Descrição</label>
-                  <textarea className="input" value={editForm.descricao ?? ""} onChange={(e) => setEditForm(p => ({ ...p, descricao: e.target.value }))} rows={3} />
+                  <label className="label">Descrição / Observações (opcional)</label>
+                  <textarea
+                    className="input"
+                    value={editForm.descricao}
+                    onChange={(e) => setEditForm(p => ({ ...p, descricao: e.target.value }))}
+                    rows={3}
+                  />
                 </div>
+
                 <div style={{ display: "flex", gap: 12 }}>
                   <button className="btn btn-secondary" onClick={() => setEventoModal(p => p ? { ...p, editando: false } : null)}>Cancelar</button>
-                  <button className="btn btn-primary" onClick={salvarEvento} disabled={salvando}>{salvando ? "Salvando..." : "Salvar"}</button>
+                  <button className="btn btn-primary" onClick={salvarEvento} disabled={salvando}>{salvando ? "Salvando..." : "Salvar Alterações"}</button>
                 </div>
               </div>
             ) : (
-              // Visualização
+              // Visualização do evento existente
               <div>
                 <h2 style={{ fontSize: 20, fontWeight: 700, color: "#f0f4ff", marginBottom: 16 }}>{eventoModal.evento.titulo}</h2>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -555,7 +651,7 @@ export default function AgendaPage() {
                   )}
                 </div>
                 <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
-                  <button className="btn btn-secondary" onClick={() => setEventoModal(p => p ? { ...p, editando: true } : null)}>✏️ Editar</button>
+                  <button className="btn btn-secondary" onClick={() => abrirEventoModal(eventoModal.evento, true)}>✏️ Editar</button>
                   <button className="btn btn-danger" onClick={removerEvento} style={{ marginLeft: "auto" }}>🗑️ Remover</button>
                 </div>
               </div>

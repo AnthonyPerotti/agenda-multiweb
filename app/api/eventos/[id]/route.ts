@@ -17,6 +17,7 @@ export async function PATCH(request: Request, { params }: Params) {
 
   const schema = z.object({
     titulo: z.string().min(3).optional(),
+    tipo: z.enum(["TRANSMISSAO_EXTERNA", "MINI_AUDITORIO", "COLACAO_FORMATURA"]).optional(),
     descricao: z.string().optional(),
     dataInicio: z.string().datetime({ offset: true }).optional(),
     dataFim: z.string().datetime({ offset: true }).optional(),
@@ -33,6 +34,7 @@ export async function PATCH(request: Request, { params }: Params) {
     where: { id },
     data: {
       ...(dados.titulo ? { titulo: dados.titulo } : {}),
+      ...(dados.tipo ? { tipo: dados.tipo } : {}),
       ...(dados.descricao !== undefined ? { descricao: dados.descricao } : {}),
       ...(dados.dataInicio ? { dataInicio: new Date(dados.dataInicio) } : {}),
       ...(dados.dataFim ? { dataFim: new Date(dados.dataFim) } : {}),
