@@ -72,7 +72,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div style={{ color: "#64748b", fontSize: 11 }}>{session?.user?.email}</div>
           </div>
           <button
-            onClick={() => signOut({ callbackUrl: "/" })}
+            onClick={() => signOut({ callbackUrl: typeof window !== "undefined" ? `${window.location.origin}/` : "/" })}
             className="sidebar-item"
             style={{ width: "100%", background: "none", border: "none", cursor: "pointer", color: "#f87171" }}
           >

@@ -77,6 +77,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     maxAge: 8 * 60 * 60,
   },
   callbacks: {
+    async redirect({ url }) {
+      // Se a URL for relativa (começa com /), retorna como relativa para o navegador usar a origem atual (agenda.cte.edu)
+      if (url.startsWith("/")) return url;
+      return url;
+    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
