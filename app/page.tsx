@@ -264,17 +264,15 @@ export default function HomePage() {
       >
         <div
           style={{
-            width: "100%",
             maxWidth: 1200,
             margin: "0 auto",
             display: "flex",
-            flexDirection: "row",
             alignItems: "center",
             justify: "space-between",
             height: 64,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div
               style={{
                 width: 36,
@@ -290,12 +288,12 @@ export default function HomePage() {
               📅
             </div>
             <div>
-              <span style={{ fontWeight: 800, color: "#f0f4ff", fontSize: 16 }}>Agenda Multiweb</span>
-              <span style={{ color: "#4ade80", fontSize: 11, marginLeft: 8, fontWeight: 600 }}>CTE · UFSM</span>
+              <div style={{ fontWeight: 800, color: "#f0f4ff", fontSize: 16, lineHeight: 1.2 }}>Agenda Multiweb</div>
+              <div style={{ color: "#64748b", fontSize: 11, fontWeight: 500 }}>CTE – UFSM</div>
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: 12, alignItems: "center", marginLeft: "auto" }}>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
             <button
               className="btn btn-secondary"
               onClick={() => router.push("/consultar")}
@@ -308,7 +306,7 @@ export default function HomePage() {
               onClick={() => router.push("/login")}
               style={{ fontSize: 13 }}
             >
-              🔒 Acesso Equipe
+              Área da Equipe
             </button>
           </div>
         </div>
@@ -316,37 +314,32 @@ export default function HomePage() {
 
       {/* Hero Section */}
       <div className="hero-gradient" style={{ padding: "60px 24px 40px", textAlign: "center" }}>
-        <div style={{ maxWidth: 760, margin: "0 auto" }}>
-          <span
+        <div style={{ maxWidth: 720, margin: "0 auto" }}>
+          <div
             style={{
-              background: "rgba(0,102,51,0.25)",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              background: "rgba(0,102,51,0.2)",
               border: "1px solid rgba(0,102,51,0.4)",
-              color: "#4ade80",
-              fontSize: 12,
-              fontWeight: 700,
-              padding: "4px 14px",
               borderRadius: 20,
-              textTransform: "uppercase",
-              letterSpacing: 1,
-              display: "inline-block",
-              marginBottom: 16,
+              padding: "6px 16px",
+              fontSize: 13,
+              color: "#4ade80",
+              marginBottom: 24,
             }}
           >
-            UFSM — Coordenadoria de Tecnologia Educacional
-          </span>
-          <h1
-            style={{
-              fontSize: 36,
-              fontWeight: 900,
-              color: "#f0f4ff",
-              lineHeight: 1.2,
-              marginBottom: 12,
-            }}
-          >
-            Solicitação de Transmissões e Reservas
+            <span style={{ width: 6, height: 6, background: "#4ade80", borderRadius: "50%", display: "inline-block" }} />
+            Sistema de Agendamento Online
+          </div>
+          <h1 style={{ fontSize: "clamp(32px, 5vw, 56px)", fontWeight: 800, color: "#f0f4ff", lineHeight: 1.2, marginBottom: 16 }}>
+            Solicite sua{" "}
+            <span style={{ color: "#4ade80" }}>transmissão</span>{" "}
+            ou{" "}
+            <span style={{ color: "#60a5fa" }}>reserva</span>
           </h1>
           <p style={{ color: "#94a3b8", fontSize: 16, maxWidth: 600, margin: "0 auto 32px" }}>
-            Agende transmissões ao vivo em qualquer prédio da universidade ou reserve o Mini Auditório do Prédio 14 (Sala 109).
+            APreencha o formulário abaixo para solicitar transmissões ao vivo ou reservar o Mini Auditório da CTE/UFSM.
           </p>
 
           {/* Seleção do Tipo de Serviço */}
