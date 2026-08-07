@@ -16,8 +16,8 @@ export async function GET(request: Request) {
   const where: Record<string, unknown> = {};
   if (tipo) where.tipo = tipo;
   if (inicio && fim) {
-    where.dataInicio = { gte: new Date(inicio) };
-    where.dataFim = { lte: new Date(fim) };
+    where.dataInicio = { lt: new Date(fim) };
+    where.dataFim = { gt: new Date(inicio) };
   }
 
   const eventos = await prisma.evento.findMany({

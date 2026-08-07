@@ -128,14 +128,18 @@ export default function TicketDetalhe({ params }: { params: Promise<{ id: string
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ confirmarConflito }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
 
-      if (res.status === 409 && data.conflito) {
+      if (res.status === 409 && data?.conflito) {
         setModal({ tipo: "conflito", conflitos: data.eventosConflitantes });
-      } else if (res.ok) {
+      } else if (res.ok && data?.sucesso) {
         setModal(null);
         await buscarTicketCompleto();
+      } else if (data?.erro || data?.mensagem) {
+        alert(data.erro || data.mensagem);
       }
+    } catch {
+      alert("Erro de conexão ao aceitar o ticket.");
     } finally {
       setProcessandoAceite(false);
     }

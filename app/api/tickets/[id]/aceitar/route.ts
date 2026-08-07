@@ -27,9 +27,10 @@ export async function POST(request: Request, { params }: Params) {
     return Response.json({ erro: "Este ticket já foi aceito" }, { status: 400 });
   }
 
-  // Verificar conflitos de horário na agenda
+  // Verificar conflitos de horário na agenda (ignorando eventos do próprio ticket)
   const eventosConflitantes = await prisma.evento.findMany({
     where: {
+      ticketId: { not: id },
       OR: [
         {
           dataInicio: { lt: ticket.dataFim },
@@ -75,41 +76,52 @@ export async function POST(request: Request, { params }: Params) {
     }
   }
 
-  // Criar os eventos na agenda local para cada dia
-  const eventosCriados = [];
-  for (const item of diasParaCriar) {
-    const evento = await prisma.evento.create({
-      data: {
-        ticketId: ticket.id,
-        titulo: ticket.tituloEvento,
-        descricao: ticket.descricao,
-        dataInicio: item.dataInicio,
-        dataFim: item.dataFim,
-        local: ticket.local,
-        tipo: ticket.tipo,
-      },
-    });
-    eventosCriados.push(evento);
+  // Buscar eventos já existentes para este ticket
+  const eventosExistentes = await prisma.evento.findMany({
+    where: { ticketId: ticket.id },
+  });
+
+  const eventosCriados = [...eventosExistentes];
+  if (eventosExistentes.length === 0) {
+    for (const item of diasParaCriar) {
+      const ev = await prisma.evento.create({
+        data: {
+          ticketId: ticket.id,
+          titulo: ticket.tituloEvento,
+          descricao: ticket.descricao,
+          dataInicio: item.dataInicio,
+          dataFim: item.dataFim,
+          local: ticket.local,
+          tipo: ticket.tipo,
+        },
+      });
+      eventosCriados.push(ev);
+    }
   }
   const evento = eventosCriados[0];
 
-  // Tentar sincronizar com Google Calendar
+  // Tentar sincronizar eventos com Google Calendar
   let googleEventId: string | null = null;
   if (await googleCalendarConfigurado()) {
-    googleEventId = await criarEventoGoogle({
-      titulo: ticket.tituloEvento,
-      descricao: ticket.descricao ?? undefined,
-      local: ticket.local,
-      dataInicio: ticket.dataInicio,
-      dataFim: ticket.dataFim,
-      codigoTicket: ticket.codigo,
-    });
+    for (const ev of eventosCriados) {
+      if (!ev.googleEventId) {
+        const gId = await criarEventoGoogle({
+          titulo: ticket.tituloEvento,
+          descricao: ticket.descricao ?? undefined,
+          local: ticket.local,
+          dataInicio: ev.dataInicio,
+          dataFim: ev.dataFim,
+          codigoTicket: ticket.codigo,
+        });
 
-    if (googleEventId) {
-      await prisma.evento.update({
-        where: { id: evento.id },
-        data: { googleEventId },
-      });
+        if (gId) {
+          await prisma.evento.update({
+            where: { id: ev.id },
+            data: { googleEventId: gId },
+          });
+          googleEventId = gId;
+        }
+      }
     }
   }
 
