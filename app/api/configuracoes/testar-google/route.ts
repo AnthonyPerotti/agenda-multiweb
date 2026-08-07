@@ -1,4 +1,3 @@
-import { Response } from "next/server";
 import { auth } from "@/lib/auth";
 import { google } from "googleapis";
 
