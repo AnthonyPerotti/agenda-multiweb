@@ -446,6 +446,11 @@
     position: relative !important;
   }
 
+  .comprovante-print > * {
+    position: relative;
+    z-index: 1;
+  }
+
   /* Marca d'Água / Timbrada no Fundo (Brasão UFSM Sólido) */
   .comprovante-print::before {
     content: "";
@@ -453,13 +458,13 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 450px;
-    height: 450px;
+    width: 520px;
+    height: 520px;
     background-image: url("/images/ufsm-solido.jpg");
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
-    opacity: 0.08;
+    opacity: 0.20;
     pointer-events: none;
     z-index: 0;
   }

@@ -361,7 +361,7 @@ function ConsultarContent() {
                   {[
                     ["Título do Evento", ticket.tituloEvento],
                     ["Tipo de Serviço", ticket.tipo === "TRANSMISSAO_EXTERNA" ? "Transmissão Externa (Prédios UFSM)" : "Mini Auditório (Prédio 14, Sala 109)"],
-                    ["Solicitante", `${ticket.nomeSolicitante} (${ticket.emailSolicitante})`],
+                    ["Solicitante", ticket.emailSolicitante ? `${ticket.nomeSolicitante} (${ticket.emailSolicitante})` : ticket.nomeSolicitante],
                     ["Data / Hora Início", formatarData(ticket.dataInicio)],
                     ["Data / Hora Fim", formatarData(ticket.dataFim)],
                     ["Local do Evento", ticket.local],
