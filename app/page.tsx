@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-// Ícones SVG inline (sem dependência externa)
+// Ícones SVG inline para interface do agendamento
 const IconCalendar = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
@@ -268,7 +268,7 @@ export default function HomePage() {
             display: "flex",
             flexDirection: "row",
             alignItems: "center",
-            justify: "space-between",
+            justifyContent: "space-between",
             height: 64,
           }}
         >
@@ -281,11 +281,12 @@ export default function HomePage() {
                 borderRadius: 10,
                 display: "flex",
                 alignItems: "center",
-                justify: "center",
-                fontSize: 18,
+                justifyContent: "center",
+                color: "#ffffff",
+                boxShadow: "0 2px 8px rgba(0, 102, 51, 0.4)",
               }}
             >
-              📅
+              <IconCalendar />
             </div>
             <div>
               <div style={{ fontWeight: 800, color: "#f0f4ff", fontSize: 16, lineHeight: 1.2 }}>Agenda Multiweb</div>

@@ -23,6 +23,7 @@ interface Ticket {
   mensagens: { id: string; nomeAutor: string; tipoAutor: string; conteudo: string; criadoEm: string; lida: boolean }[];
   historico: { id: string; nomeUsuario: string; acao: string; criadoEm: string }[];
   evento?: { id: string; googleEventId?: string } | null;
+  eventos?: { id: string; googleEventId?: string }[];
 }
 
 export default function TicketDetalhe({ params }: { params: Promise<{ id: string }> }) {
@@ -280,11 +281,11 @@ export default function TicketDetalhe({ params }: { params: Promise<{ id: string
               <div style={{ color: "#60a5fa", fontSize: 14 }}>{ticket.anexosLinks}</div>
             </div>
           )}
-          {ticket.evento && (
+          {(ticket.evento || (ticket.eventos && ticket.eventos.length > 0)) && (
             <div style={{ marginTop: 16, padding: "12px 16px", background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 8 }}>
               <span style={{ color: "#4ade80", fontSize: 13, fontWeight: 600 }}>
                 ✅ Evento registrado na agenda
-                {ticket.evento.googleEventId ? " • 🔄 Sincronizado com Google Calendar" : ""}
+                {(ticket.evento?.googleEventId || ticket.eventos?.[0]?.googleEventId) ? " • 🔄 Sincronizado com Google Calendar" : ""}
               </span>
             </div>
           )}

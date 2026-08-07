@@ -24,7 +24,7 @@ export async function GET(_request: Request, { params }: Params) {
       historico: {
         orderBy: { criadoEm: "asc" },
       },
-      evento: {
+      eventos: {
         select: { id: true, googleEventId: true },
       },
     },
