@@ -163,9 +163,11 @@ export default function ConfiguracoesPage() {
   const [salvando, setSalvando] = useState(false);
   const [testando, setTestando] = useState(false);
   const [testandoGoogle, setTestandoGoogle] = useState(false);
+  const [testandoTemplate, setTestandoTemplate] = useState(false);
   const [feedback, setFeedback] = useState<{ tipo: "sucesso" | "erro"; mensagem: string } | null>(null);
   const [templateAtivo, setTemplateAtivo] = useState("template_confirmacao");
   const [emailTeste, setEmailTeste] = useState("");
+  const [emailTesteTemplate, setEmailTesteTemplate] = useState("");
 
   const buscarConfigs = useCallback(async () => {
     setCarregando(true);
@@ -255,6 +257,31 @@ export default function ConfiguracoesPage() {
       setFeedback({ tipo: data.sucesso ? "sucesso" : "erro", mensagem: data.mensagem ?? data.erro ?? "Erro ao testar Google Calendar" });
     } finally {
       setTestandoGoogle(false);
+    }
+  };
+
+  const testarTemplate = async () => {
+    const emailDestino = emailTesteTemplate || emailTeste;
+    if (!emailDestino) {
+      setFeedback({ tipo: "erro", mensagem: "Informe um e-mail para receber o teste do template." });
+      return;
+    }
+    setTestandoTemplate(true);
+    setFeedback(null);
+    try {
+      const res = await fetch("/api/configuracoes/testar-template", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chaveTemplate: templateAtivo,
+          htmlCustomizado: configs[templateAtivo],
+          paraEmail: emailDestino,
+        }),
+      });
+      const data = await res.json();
+      setFeedback({ tipo: data.sucesso ? "sucesso" : "erro", mensagem: data.mensagem ?? data.erro ?? "Erro ao testar template" });
+    } finally {
+      setTestandoTemplate(false);
     }
   };
 
@@ -462,7 +489,32 @@ export default function ConfiguracoesPage() {
                   placeholder={`<!-- Cole aqui o HTML do template de ${t.label.toLowerCase()} -->\n<!-- Use as variáveis listadas acima -->`}
                 />
               </div>
-            </div>
+
+              <div className="card" style={{ marginTop: 16 }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 700, color: "#f0f4ff", marginBottom: 8 }}>🧪 Testar Envio do Template "{t.label}"</h3>
+                  <p style={{ color: "#64748b", fontSize: 12, marginBottom: 14 }}>
+                    Envia um e-mail de teste com dados fictícios para validar como este template será exibido na caixa de entrada.
+                  </p>
+                  <div style={{ display: "flex", gap: 12 }}>
+                    <input
+                      className="input"
+                      type="email"
+                      value={emailTesteTemplate}
+                      onChange={(e) => setEmailTesteTemplate(e.target.value)}
+                      placeholder="email@para.receber.o.teste.com"
+                      style={{ flex: 1 }}
+                    />
+                    <button
+                      className="btn btn-secondary"
+                      onClick={testarTemplate}
+                      disabled={testandoTemplate}
+                      style={{ minWidth: 160 }}
+                    >
+                      {testandoTemplate ? "⏳ Enviando..." : "🚀 Testar Este Template"}
+                    </button>
+                  </div>
+                </div>
+              </div>
           ))}
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 16 }}>
