@@ -264,6 +264,7 @@ export default function HomePage() {
       >
         <div
           style={{
+            width: "100%",
             maxWidth: 1200,
             margin: "0 auto",
             display: "flex",
