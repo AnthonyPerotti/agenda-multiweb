@@ -93,7 +93,7 @@ export async function POST(request: Request) {
   } catch (err) {
     if (err instanceof z.ZodError) {
       return Response.json(
-        { erro: err.errors.map((e) => e.message).join(", ") },
+        { erro: err.issues.map((e) => e.message).join(", ") },
         { status: 400 }
       );
     }
