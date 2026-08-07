@@ -22,6 +22,140 @@ const TEMPLATES: TemplateEditor[] = [
   { chave: "template_mensagem", label: "Nova Mensagem no Chat", descricao: "Enviado quando a equipe responde no chat" },
 ];
 
+const HTML_PADRAO: Record<string, string> = {
+  template_confirmacao: `<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+  <div style="background: #006633; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+    <h1 style="color: white; margin: 0; font-size: 22px;">📅 Agenda Multiweb</h1>
+    <p style="color: #a8d5b5; margin: 4px 0 0;">Coordenadoria de Tecnologia Educacional – UFSM</p>
+  </div>
+  <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; border: 1px solid #ddd;">
+    <h2 style="color: #006633;">✅ Solicitação Recebida!</h2>
+    <p>Olá, <strong>{nome_solicitante}</strong>!</p>
+    <p>Sua solicitação foi recebida com sucesso. Utilize o código abaixo para acompanhar o status:</p>
+    <div style="background: #006633; color: white; font-size: 28px; font-weight: bold; text-align: center; padding: 16px; border-radius: 8px; letter-spacing: 4px; margin: 20px 0;">
+      {codigo_ticket}
+    </div>
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+      <tr><td style="padding: 8px; background: #f0f0f0; font-weight: bold; width: 40%;">Evento:</td><td style="padding: 8px;">{titulo_evento}</td></tr>
+      <tr><td style="padding: 8px; font-weight: bold;">Início:</td><td style="padding: 8px;">{data_inicio}</td></tr>
+      <tr><td style="padding: 8px; background: #f0f0f0; font-weight: bold;">Fim:</td><td style="padding: 8px; background: #f0f0f0;">{data_fim}</td></tr>
+      <tr><td style="padding: 8px; font-weight: bold;">Local:</td><td style="padding: 8px;">{local}</td></tr>
+      <tr><td style="padding: 8px; background: #f0f0f0; font-weight: bold;">Tipo:</td><td style="padding: 8px; background: #f0f0f0;">{tipo}</td></tr>
+    </table>
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="{link_ticket}" style="background: #006633; color: white; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;">Acompanhar Solicitação</a>
+    </div>
+    <p style="color: #666; font-size: 14px;">Nossa equipe analisará sua solicitação em breve. Você receberá atualizações por e-mail nesta mesma conversa.</p>
+    <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+    <p style="color: #999; font-size: 12px; text-align: center;">CTE – Coordenadoria de Tecnologia Educacional | UFSM<br>Este e-mail foi enviado automaticamente. Não responda diretamente.</p>
+  </div>
+</body>
+</html>`,
+
+  template_notificacao_equipe: `<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+  <div style="background: #006633; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+    <h1 style="color: white; margin: 0; font-size: 22px;">📅 Agenda Multiweb</h1>
+    <p style="color: #a8d5b5; margin: 4px 0 0;">Coordenadoria de Tecnologia Educacional – UFSM</p>
+  </div>
+  <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; border: 1px solid #ddd;">
+    <h2 style="color: #006633;">🔔 Novo Agendamento Recebido!</h2>
+    <p>Uma nova solicitação de agendamento foi aberta no sistema:</p>
+    <div style="background: #006633; color: white; font-size: 24px; font-weight: bold; text-align: center; padding: 14px; border-radius: 8px; letter-spacing: 3px; margin: 16px 0;">
+      {codigo_ticket}
+    </div>
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+      <tr><td style="padding: 8px; background: #f0f0f0; font-weight: bold; width: 40%;">Solicitante:</td><td style="padding: 8px;">{nome_solicitante} ({email_solicitante})</td></tr>
+      <tr><td style="padding: 8px; font-weight: bold;">Evento:</td><td style="padding: 8px;">{titulo_evento}</td></tr>
+      <tr><td style="padding: 8px; background: #f0f0f0; font-weight: bold;">Início:</td><td style="padding: 8px; background: #f0f0f0;">{data_inicio}</td></tr>
+      <tr><td style="padding: 8px; font-weight: bold;">Fim:</td><td style="padding: 8px;">{data_fim}</td></tr>
+      <tr><td style="padding: 8px; background: #f0f0f0; font-weight: bold;">Local:</td><td style="padding: 8px; background: #f0f0f0;">{local}</td></tr>
+      <tr><td style="padding: 8px; font-weight: bold;">Tipo:</td><td style="padding: 8px;">{tipo}</td></tr>
+    </table>
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="{link_ticket}" style="background: #006633; color: white; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;">Gerenciar no Painel</a>
+    </div>
+    <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+    <p style="color: #999; font-size: 12px; text-align: center;">CTE – Coordenadoria de Tecnologia Educacional | UFSM</p>
+  </div>
+</body>
+</html>`,
+
+  template_aceite: `<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"></head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+  <div style="background: #006633; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+    <h1 style="color: white; margin: 0; font-size: 22px;">📅 Agenda Multiweb</h1>
+    <p style="color: #a8d5b5; margin: 4px 0 0;">Coordenadoria de Tecnologia Educacional – UFSM</p>
+  </div>
+  <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; border: 1px solid #ddd;">
+    <h2 style="color: #28a745;">🎉 Solicitação Aceita!</h2>
+    <p>Olá, <strong>{nome_solicitante}</strong>!</p>
+    <p>Temos ótimas notícias! Sua solicitação <strong>[{codigo_ticket}] {titulo_evento}</strong> foi <strong style="color: #28a745;">aceita</strong> pela equipe CTE e registrada na nossa agenda.</p>
+    {mensagem_equipe}
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="{link_ticket}" style="background: #006633; color: white; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;">Ver Detalhes</a>
+    </div>
+    <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+    <p style="color: #999; font-size: 12px; text-align: center;">CTE – Coordenadoria de Tecnologia Educacional | UFSM</p>
+  </div>
+</body>
+</html>`,
+
+  template_recusa: `<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"></head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+  <div style="background: #006633; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+    <h1 style="color: white; margin: 0; font-size: 22px;">📅 Agenda Multiweb</h1>
+    <p style="color: #a8d5b5; margin: 4px 0 0;">Coordenadoria de Tecnologia Educacional – UFSM</p>
+  </div>
+  <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; border: 1px solid #ddd;">
+    <h2 style="color: #dc3545;">❌ Solicitação Não Atendida</h2>
+    <p>Olá, <strong>{nome_solicitante}</strong>!</p>
+    <p>Infelizmente, sua solicitação <strong>[{codigo_ticket}] {titulo_evento}</strong> não pôde ser atendida no momento.</p>
+    {mensagem_equipe}
+    <p>Para mais informações, acesse o detalhe da sua solicitação:</p>
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="{link_ticket}" style="background: #006633; color: white; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;">Ver Detalhes</a>
+    </div>
+    <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+    <p style="color: #999; font-size: 12px; text-align: center;">CTE – Coordenadoria de Tecnologia Educacional | UFSM</p>
+  </div>
+</body>
+</html>`,
+
+  template_mensagem: `<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"></head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+  <div style="background: #006633; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+    <h1 style="color: white; margin: 0; font-size: 22px;">📅 Agenda Multiweb</h1>
+    <p style="color: #a8d5b5; margin: 4px 0 0;">Coordenadoria de Tecnologia Educacional – UFSM</p>
+  </div>
+  <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; border: 1px solid #ddd;">
+    <h2 style="color: #006633;">💬 Nova mensagem da equipe CTE</h2>
+    <p>Olá, <strong>{nome_solicitante}</strong>!</p>
+    <p>A equipe CTE enviou uma nova mensagem sobre sua solicitação <strong>[{codigo_ticket}] {titulo_evento}</strong>:</p>
+    <div style="background: white; border-left: 4px solid #006633; padding: 16px; margin: 16px 0; border-radius: 0 8px 8px 0;">
+      {conteudo_mensagem}
+    </div>
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="{link_ticket}" style="background: #006633; color: white; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;">Responder / Ver Conversa</a>
+    </div>
+    <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+    <p style="color: #999; font-size: 12px; text-align: center;">CTE – Coordenadoria de Tecnologia Educacional | UFSM</p>
+  </div>
+</body>
+</html>`,
+};
+
 export default function ConfiguracoesPage() {
   const [aba, setAba] = useState<"smtp" | "templates" | "google" | "usuario">("smtp");
   const [configs, setConfigs] = useState<Record<string, string>>({});
@@ -309,7 +443,16 @@ export default function ConfiguracoesPage() {
                 </p>
               </div>
               <div className="card">
-                <label className="label">{t.label} — HTML do Template</label>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <label className="label" style={{ marginBottom: 0 }}>{t.label} — HTML do Template</label>
+                  <button
+                    className="btn btn-secondary"
+                    style={{ fontSize: 12, padding: "4px 12px" }}
+                    onClick={() => atualizar(t.chave, HTML_PADRAO[t.chave] ?? "")}
+                  >
+                    ✨ Carregar HTML Padrão deste Template
+                  </button>
+                </div>
                 <textarea
                   className="input"
                   value={configs[t.chave] ?? ""}
@@ -322,7 +465,18 @@ export default function ConfiguracoesPage() {
             </div>
           ))}
 
-          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 16 }}>
+            <button
+              className="btn btn-secondary"
+              style={{ fontSize: 13 }}
+              onClick={() => {
+                for (const t of TEMPLATES) {
+                  if (HTML_PADRAO[t.chave]) atualizar(t.chave, HTML_PADRAO[t.chave]);
+                }
+              }}
+            >
+              ✨ Carregar Todos os Templates Padrão CTE
+            </button>
             <button className="btn btn-primary" onClick={salvar} disabled={salvando}>
               {salvando ? "⏳ Salvando..." : "💾 Salvar Templates"}
             </button>
