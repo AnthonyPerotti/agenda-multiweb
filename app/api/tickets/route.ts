@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { gerarCodigoTicket, formatarData, labelTipo } from "@/lib/utils";
-import { enviarConfirmacaoTicket } from "@/lib/email";
+import { enviarConfirmacaoTicket, enviarNotificacaoEquipe } from "@/lib/email";
 import { z } from "zod";
 
 const schemaTicket = z.object({
@@ -106,8 +106,19 @@ export async function POST(request: Request) {
           data: { emailMessageId },
         });
       }
+      // Notificar a equipe CTE por e-mail sobre o novo agendamento
+      await enviarNotificacaoEquipe({
+        codigo: ticket.codigo,
+        nomeSolicitante: ticket.nomeSolicitante,
+        emailSolicitante: ticket.emailSolicitante,
+        titulo: ticket.tituloEvento,
+        dataInicio: formatarData(ticket.dataInicio),
+        dataFim: formatarData(ticket.dataFim),
+        local: ticket.local,
+        tipo: labelTipo(ticket.tipo),
+      });
     } catch (emailErr) {
-      console.error("[Email] Erro ao enviar confirmação:", emailErr);
+      console.error("[Email] Erro ao enviar confirmação/notificação:", emailErr);
     }
 
     return Response.json(

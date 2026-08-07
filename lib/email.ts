@@ -243,6 +243,52 @@ async function getSiteUrl(): Promise<string> {
   return cfg?.valor ?? process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 }
 
+/**
+ * Envia e-mail de notificação para a equipe CTE quando um novo ticket é criado.
+ */
+export async function enviarNotificacaoEquipe(params: {
+  codigo: string;
+  nomeSolicitante: string;
+  emailSolicitante: string;
+  titulo: string;
+  dataInicio: string;
+  dataFim: string;
+  local: string;
+  tipo: string;
+}) {
+  const cfgNotif = await prisma.configuracao.findUnique({ where: { chave: "email_notificacao_equipe" } });
+  const cfgSmtpUser = await prisma.configuracao.findUnique({ where: { chave: "smtp_user" } });
+  const emailDestino = cfgNotif?.valor?.trim() || cfgSmtpUser?.valor?.trim();
+
+  if (!emailDestino) return;
+
+  const siteUrl = await getSiteUrl();
+  const linkDashboard = `${siteUrl}/dashboard/tickets`;
+  const template = await getTemplate("template_notificacao_equipe");
+
+  const html = renderizarTemplate(template, {
+    nome_solicitante: params.nomeSolicitante,
+    email_solicitante: params.emailSolicitante,
+    codigo_ticket: params.codigo,
+    titulo_evento: params.titulo,
+    data_inicio: params.dataInicio,
+    data_fim: params.dataFim,
+    local: params.local,
+    tipo: params.tipo,
+    link_ticket: linkDashboard,
+  });
+
+  try {
+    await enviarEmail({
+      para: emailDestino,
+      assunto: `[Novo Ticket #${params.codigo}] ${params.titulo} (${params.nomeSolicitante})`,
+      html,
+    });
+  } catch (err) {
+    console.error("[Email] Erro ao notificar equipe:", err);
+  }
+}
+
 // ==================== TEMPLATES PADRÃO ====================
 const templatePadrao: Record<string, string> = {
   template_confirmacao: `
@@ -343,6 +389,38 @@ const templatePadrao: Record<string, string> = {
     </div>
     <div style="text-align: center; margin: 24px 0;">
       <a href="{link_ticket}" style="background: #006633; color: white; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;">Responder / Ver Conversa</a>
+    </div>
+    <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+    <p style="color: #999; font-size: 12px; text-align: center;">CTE – Coordenadoria de Tecnologia Educacional | UFSM</p>
+  </div>
+</body>
+</html>`,
+
+  template_notificacao_equipe: `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+  <div style="background: #006633; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+    <h1 style="color: white; margin: 0; font-size: 22px;">📅 Agenda Multiweb</h1>
+    <p style="color: #a8d5b5; margin: 4px 0 0;">Coordenadoria de Tecnologia Educacional – UFSM</p>
+  </div>
+  <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; border: 1px solid #ddd;">
+    <h2 style="color: #006633;">🔔 Novo Agendamento Recebido!</h2>
+    <p>Uma nova solicitação de agendamento foi aberta no sistema:</p>
+    <div style="background: #006633; color: white; font-size: 24px; font-weight: bold; text-align: center; padding: 14px; border-radius: 8px; letter-spacing: 3px; margin: 16px 0;">
+      {codigo_ticket}
+    </div>
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+      <tr><td style="padding: 8px; background: #f0f0f0; font-weight: bold; width: 40%;">Solicitante:</td><td style="padding: 8px;">{nome_solicitante} ({email_solicitante})</td></tr>
+      <tr><td style="padding: 8px; font-weight: bold;">Evento:</td><td style="padding: 8px;">{titulo_evento}</td></tr>
+      <tr><td style="padding: 8px; background: #f0f0f0; font-weight: bold;">Início:</td><td style="padding: 8px; background: #f0f0f0;">{data_inicio}</td></tr>
+      <tr><td style="padding: 8px; font-weight: bold;">Fim:</td><td style="padding: 8px;">{data_fim}</td></tr>
+      <tr><td style="padding: 8px; background: #f0f0f0; font-weight: bold;">Local:</td><td style="padding: 8px; background: #f0f0f0;">{local}</td></tr>
+      <tr><td style="padding: 8px; font-weight: bold;">Tipo:</td><td style="padding: 8px;">{tipo}</td></tr>
+    </table>
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="{link_ticket}" style="background: #006633; color: white; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold; display: inline-block;">Gerenciar no Painel</a>
     </div>
     <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
     <p style="color: #999; font-size: 12px; text-align: center;">CTE – Coordenadoria de Tecnologia Educacional | UFSM</p>

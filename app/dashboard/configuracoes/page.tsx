@@ -15,7 +15,8 @@ interface TemplateEditor {
 }
 
 const TEMPLATES: TemplateEditor[] = [
-  { chave: "template_confirmacao", label: "Confirmação de Abertura", descricao: "Enviado ao solicitante quando o ticket é criado" },
+  { chave: "template_confirmacao", label: "Confirmação de Abertura (Solicitante)", descricao: "Enviado ao solicitante quando o ticket é criado" },
+  { chave: "template_notificacao_equipe", label: "Notificação Novo Ticket (Equipe)", descricao: "Enviado à equipe CTE sempre que uma nova solicitação é criada" },
   { chave: "template_aceite", label: "Aceite do Ticket", descricao: "Enviado quando a equipe aceita a solicitação" },
   { chave: "template_recusa", label: "Recusa do Ticket", descricao: "Enviado quando a solicitação não pode ser atendida" },
   { chave: "template_mensagem", label: "Nova Mensagem no Chat", descricao: "Enviado quando a equipe responde no chat" },
@@ -100,6 +101,7 @@ export default function ConfiguracoesPage() {
 
   const variaveis: Record<string, string[]> = {
     template_confirmacao: ["{nome_solicitante}", "{codigo_ticket}", "{titulo_evento}", "{data_inicio}", "{data_fim}", "{local}", "{tipo}", "{link_ticket}"],
+    template_notificacao_equipe: ["{nome_solicitante}", "{email_solicitante}", "{codigo_ticket}", "{titulo_evento}", "{data_inicio}", "{data_fim}", "{local}", "{tipo}", "{link_ticket}"],
     template_aceite: ["{nome_solicitante}", "{codigo_ticket}", "{titulo_evento}", "{mensagem_equipe}", "{link_ticket}"],
     template_recusa: ["{nome_solicitante}", "{codigo_ticket}", "{titulo_evento}", "{mensagem_equipe}", "{link_ticket}"],
     template_mensagem: ["{nome_solicitante}", "{codigo_ticket}", "{titulo_evento}", "{conteudo_mensagem}", "{link_ticket}"],
@@ -184,6 +186,13 @@ export default function ConfiguracoesPage() {
               <div style={{ gridColumn: "span 2" }}>
                 <label className="label">URL do Site (para links nos e-mails)</label>
                 <input className="input" value={configs.site_url ?? ""} onChange={(e) => atualizar("site_url", e.target.value)} placeholder="https://agenda.cte.ufsm.br" />
+              </div>
+              <div style={{ gridColumn: "span 2" }}>
+                <label className="label">E-mail de Notificação da Equipe (Recebe aviso de novos tickets)</label>
+                <input className="input" type="email" value={configs.email_notificacao_equipe ?? ""} onChange={(e) => atualizar("email_notificacao_equipe", e.target.value)} placeholder="multiweb@cte.ufsm.br (deixe vazio para usar o e-mail do usuário SMTP)" />
+                <p style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
+                  Endereço de e-mail da equipe CTE que receberá uma notificação automática sempre que um novo agendamento for aberto.
+                </p>
               </div>
             </div>
             <div style={{ marginTop: 16 }}>
