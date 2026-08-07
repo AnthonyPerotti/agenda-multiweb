@@ -265,13 +265,16 @@ export default function HomePage() {
         <div
           style={{
             width: "100%",
+            maxWidth: 1200,
+            margin: "0 auto",
             display: "flex",
+            flexDirection: "row",
             alignItems: "center",
             justify: "space-between",
             height: 64,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
             <div
               style={{
                 width: 36,
@@ -292,7 +295,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: 12 }}>
+          <div style={{ display: "flex", gap: 12, alignItems: "center", marginLeft: "auto" }}>
             <button
               className="btn btn-secondary"
               onClick={() => router.push("/consultar")}
