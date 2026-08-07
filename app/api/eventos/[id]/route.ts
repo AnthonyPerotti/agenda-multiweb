@@ -19,8 +19,8 @@ export async function PATCH(request: Request, { params }: Params) {
     titulo: z.string().min(3).optional(),
     tipo: z.enum(["TRANSMISSAO_EXTERNA", "MINI_AUDITORIO", "COLACAO_FORMATURA"]).optional(),
     descricao: z.string().optional(),
-    dataInicio: z.string().datetime({ offset: true }).optional(),
-    dataFim: z.string().datetime({ offset: true }).optional(),
+    dataInicio: z.string().optional(),
+    dataFim: z.string().optional(),
     local: z.string().min(3).optional(),
     responsaveisIds: z.array(z.string()).optional(),
   });
