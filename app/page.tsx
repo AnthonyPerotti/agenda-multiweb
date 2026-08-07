@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Metadata } from "next";
 
 // Ícones SVG inline (sem dependência externa)
 const IconCalendar = () => (
@@ -44,6 +43,12 @@ const IconArrow = () => (
   </svg>
 );
 
+interface DiaHorario {
+  data: string;
+  horaInicio: string;
+  horaFim: string;
+}
+
 export default function HomePage() {
   const router = useRouter();
   const [tipo, setTipo] = useState<"TRANSMISSAO_EXTERNA" | "MINI_AUDITORIO">("TRANSMISSAO_EXTERNA");
@@ -52,22 +57,50 @@ export default function HomePage() {
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState("");
 
+  const [multiplosDias, setMultiplosDias] = useState(false);
+
+  // Formulário base
   const [form, setForm] = useState({
     nomeSolicitante: "",
     emailSolicitante: "",
     tituloEvento: "",
     descricao: "",
-    dataInicio: "",
-    dataFim: "",
     local: "",
     anexosLinks: "",
-    multiplosDias: false,
-    detalhamentoDias: "",
   });
+
+  // Estado para Dia Único
+  const [diaUnico, setDiaUnico] = useState<DiaHorario>({
+    data: "",
+    horaInicio: "08:00",
+    horaFim: "12:00",
+  });
+
+  // Estado para Múltiplos Dias (Lista dinâmica)
+  const [diasLista, setDiasLista] = useState<DiaHorario[]>([
+    { data: "", horaInicio: "08:00", horaFim: "12:00" },
+  ]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
     setErro("");
+  };
+
+  const adicionarDia = () => {
+    setDiasLista((prev) => [...prev, { data: "", horaInicio: "08:00", horaFim: "12:00" }]);
+  };
+
+  const removerDia = (index: number) => {
+    if (diasLista.length <= 1) return;
+    setDiasLista((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const atualizarDiaLista = (index: number, campo: keyof DiaHorario, valor: string) => {
+    setDiasLista((prev) => {
+      const nova = [...prev];
+      nova[index] = { ...nova[index], [campo]: valor };
+      return nova;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -75,20 +108,56 @@ export default function HomePage() {
     setCarregando(true);
     setErro("");
 
-    const descricaoFinal = form.multiplosDias
-      ? `📅 EVENTO DE MÚLTIPLOS DIAS:\n${form.detalhamentoDias}\n\n${form.descricao}`
-      : form.descricao;
-
-    const payload = {
-      ...form,
-      descricao: descricaoFinal,
-      tipo,
-      local: tipo === "MINI_AUDITORIO" ? "Prédio 14, Sala 109 – CTE/UFSM" : form.local,
-      dataInicio: new Date(form.dataInicio).toISOString(),
-      dataFim: new Date(form.dataFim).toISOString(),
-    };
-
     try {
+      let dataInicioISO = "";
+      let dataFimISO = "";
+      let detalhamentoDiasTexto = "";
+
+      if (!multiplosDias) {
+        // Validação Dia Único
+        if (!diaUnico.data || !diaUnico.horaInicio || !diaUnico.horaFim) {
+          setErro("Informe a data e os horários de início e fim do evento.");
+          setCarregando(false);
+          return;
+        }
+        dataInicioISO = new Date(`${diaUnico.data}T${diaUnico.horaInicio}`).toISOString();
+        dataFimISO = new Date(`${diaUnico.data}T${diaUnico.horaFim}`).toISOString();
+      } else {
+        // Validação Múltiplos Dias
+        const diasValidos = diasLista.filter((d) => d.data && d.horaInicio && d.horaFim);
+        if (diasValidos.length === 0) {
+          setErro("Preencha ao menos uma data e horário para o evento.");
+          setCarregando(false);
+          return;
+        }
+
+        // Ordenar os dias por data
+        diasValidos.sort((a, b) => new Date(`${a.data}T${a.horaInicio}`).getTime() - new Date(`${b.data}T${b.horaInicio}`).getTime());
+
+        const primeiroDia = diasValidos[0];
+        const ultimoDia = diasValidos[diasValidos.length - 1];
+
+        dataInicioISO = new Date(`${primeiroDia.data}T${primeiroDia.horaInicio}`).toISOString();
+        dataFimISO = new Date(`${ultimoDia.data}T${ultimoDia.horaFim}`).toISOString();
+
+        detalhamentoDiasTexto = diasValidos
+          .map((d, i) => `• Dia ${i + 1} (${new Date(`${d.data}T00:00`).toLocaleDateString("pt-BR")}): ${d.horaInicio} às ${d.horaFim}`)
+          .join("\n");
+      }
+
+      const descricaoFinal = multiplosDias
+        ? `📅 CRONOGRAMA DE MÚLTIPLOS DIAS:\n${detalhamentoDiasTexto}\n\n${form.descricao}`
+        : form.descricao;
+
+      const payload = {
+        ...form,
+        descricao: descricaoFinal,
+        tipo,
+        local: tipo === "MINI_AUDITORIO" ? "Prédio 14, Sala 109 – CTE/UFSM" : form.local,
+        dataInicio: dataInicioISO,
+        dataFim: dataFimISO,
+      };
+
       const res = await fetch("/api/tickets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -155,10 +224,9 @@ export default function HomePage() {
               className="btn btn-secondary"
               onClick={() => {
                 setEtapa("form");
-                setForm({
-                  nomeSolicitante: "", emailSolicitante: "", tituloEvento: "",
-                  descricao: "", dataInicio: "", dataFim: "", local: "", anexosLinks: "",
-                });
+                setForm({ nomeSolicitante: "", emailSolicitante: "", tituloEvento: "", descricao: "", local: "", anexosLinks: "" });
+                setDiaUnico({ data: "", horaInicio: "08:00", horaFim: "12:00" });
+                setDiasLista([{ data: "", horaInicio: "08:00", horaFim: "12:00" }]);
               }}
             >
               Nova Solicitação
@@ -174,32 +242,42 @@ export default function HomePage() {
       {/* Header */}
       <header
         style={{
-          background: "linear-gradient(135deg, #001a0d 0%, #003333 50%, #003366 100%)",
-          borderBottom: "1px solid rgba(0,102,51,0.3)",
+          background: "linear-gradient(135deg, #001a0d, #003366)",
+          borderBottom: "1px solid rgba(0, 102, 51, 0.3)",
           padding: "0 24px",
         }}
       >
-        <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64 }}>
+        <div
+          style={{
+            maxWidth: 1100,
+            margin: "0 auto",
+            display: "flex",
+            alignItems: "center",
+            justify: "space-between",
+            height: 64,
+          }}
+        >
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div
               style={{
                 width: 36,
                 height: 36,
                 background: "linear-gradient(135deg, #006633, #008040)",
-                borderRadius: 8,
+                borderRadius: 10,
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center",
+                justify: "center",
                 fontSize: 18,
               }}
             >
               📅
             </div>
             <div>
-              <div style={{ fontWeight: 700, fontSize: 16, color: "#f0f4ff" }}>Agenda Multiweb</div>
-              <div style={{ fontSize: 11, color: "#64748b" }}>CTE – UFSM</div>
+              <span style={{ fontWeight: 800, color: "#f0f4ff", fontSize: 16 }}>Agenda Multiweb</span>
+              <span style={{ color: "#4ade80", fontSize: 11, marginLeft: 8, fontWeight: 600 }}>CTE · UFSM</span>
             </div>
           </div>
+
           <div style={{ display: "flex", gap: 12 }}>
             <button
               className="btn btn-secondary"
@@ -213,87 +291,94 @@ export default function HomePage() {
               onClick={() => router.push("/login")}
               style={{ fontSize: 13 }}
             >
-              Área da Equipe
+              🔒 Acesso Equipe
             </button>
           </div>
         </div>
       </header>
 
-      {/* Hero */}
-      <div
-        className="hero-gradient"
-        style={{ padding: "80px 24px 60px", textAlign: "center" }}
-      >
-        <div style={{ maxWidth: 720, margin: "0 auto" }}>
-          <div
+      {/* Hero Section */}
+      <div className="hero-gradient" style={{ padding: "60px 24px 40px", textAlign: "center" }}>
+        <div style={{ maxWidth: 760, margin: "0 auto" }}>
+          <span
             style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              background: "rgba(0,102,51,0.2)",
+              background: "rgba(0,102,51,0.25)",
               border: "1px solid rgba(0,102,51,0.4)",
-              borderRadius: 20,
-              padding: "6px 16px",
-              fontSize: 13,
               color: "#4ade80",
-              marginBottom: 24,
+              fontSize: 12,
+              fontWeight: 700,
+              padding: "4px 14px",
+              borderRadius: 20,
+              textTransform: "uppercase",
+              letterSpacing: 1,
+              display: "inline-block",
+              marginBottom: 16,
             }}
           >
-            <span style={{ width: 6, height: 6, background: "#4ade80", borderRadius: "50%", display: "inline-block" }} />
-            Sistema de Agendamento Online
-          </div>
-          <h1 style={{ fontSize: "clamp(32px, 5vw, 56px)", fontWeight: 800, color: "#f0f4ff", lineHeight: 1.2, marginBottom: 16 }}>
-            Solicite sua{" "}
-            <span style={{ color: "#4ade80" }}>transmissão</span>{" "}
-            ou{" "}
-            <span style={{ color: "#60a5fa" }}>reserva</span>
+            UFSM — Coordenadoria de Tecnologia Educacional
+          </span>
+          <h1
+            style={{
+              fontSize: 36,
+              fontWeight: 900,
+              color: "#f0f4ff",
+              lineHeight: 1.2,
+              marginBottom: 12,
+            }}
+          >
+            Solicitação de Transmissões e Reservas
           </h1>
-          <p style={{ fontSize: 18, color: "#94a3b8", maxWidth: 560, margin: "0 auto 40px" }}>
-            Preencha o formulário abaixo para solicitar transmissões ao vivo ou reservar o Mini Auditório da CTE/UFSM.
+          <p style={{ color: "#94a3b8", fontSize: 16, maxWidth: 600, margin: "0 auto 32px" }}>
+            Agende transmissões ao vivo em qualquer prédio da universidade ou reserve o Mini Auditório do Prédio 14 (Sala 109).
           </p>
 
-          {/* Cards de tipo */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, maxWidth: 640, margin: "0 auto 48px" }}>
+          {/* Seleção do Tipo de Serviço */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 16,
+              maxWidth: 580,
+              margin: "0 auto",
+            }}
+          >
             <button
+              type="button"
               onClick={() => setTipo("TRANSMISSAO_EXTERNA")}
               style={{
-                background: tipo === "TRANSMISSAO_EXTERNA"
-                  ? "rgba(14,165,233,0.15)"
-                  : "rgba(26,34,53,0.8)",
-                border: tipo === "TRANSMISSAO_EXTERNA"
-                  ? "2px solid #0ea5e9"
-                  : "1px solid rgba(255,255,255,0.08)",
+                background: tipo === "TRANSMISSAO_EXTERNA" ? "rgba(0,102,51,0.25)" : "var(--bg-card)",
+                border: `2px solid ${tipo === "TRANSMISSAO_EXTERNA" ? "#006633" : "var(--border)"}`,
                 borderRadius: 12,
                 padding: "20px 16px",
                 cursor: "pointer",
-                textAlign: "center",
+                textAlign: "left",
                 transition: "all 0.2s",
               }}
             >
-              <div style={{ color: "#38bdf8", marginBottom: 8, display: "flex", justifyContent: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, color: tipo === "TRANSMISSAO_EXTERNA" ? "#4ade80" : "#94a3b8" }}>
                 <IconVideo />
+                <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase" }}>Transmissão Externa</span>
               </div>
-              <div style={{ fontWeight: 700, color: "#f0f4ff", fontSize: 14 }}>Transmissão Externa</div>
-              <div style={{ color: "#64748b", fontSize: 12, marginTop: 4 }}>Outros prédios da UFSM</div>
+              <div style={{ fontWeight: 700, color: "#f0f4ff", fontSize: 14 }}>Transmissão ao Vivo</div>
+              <div style={{ color: "#64748b", fontSize: 12, marginTop: 4 }}>Em qualquer prédio da UFSM</div>
             </button>
+
             <button
+              type="button"
               onClick={() => setTipo("MINI_AUDITORIO")}
               style={{
-                background: tipo === "MINI_AUDITORIO"
-                  ? "rgba(168,85,247,0.15)"
-                  : "rgba(26,34,53,0.8)",
-                border: tipo === "MINI_AUDITORIO"
-                  ? "2px solid #a855f7"
-                  : "1px solid rgba(255,255,255,0.08)",
+                background: tipo === "MINI_AUDITORIO" ? "rgba(0,102,51,0.25)" : "var(--bg-card)",
+                border: `2px solid ${tipo === "MINI_AUDITORIO" ? "#006633" : "var(--border)"}`,
                 borderRadius: 12,
                 padding: "20px 16px",
                 cursor: "pointer",
-                textAlign: "center",
+                textAlign: "left",
                 transition: "all 0.2s",
               }}
             >
-              <div style={{ color: "#c084fc", marginBottom: 8, display: "flex", justifyContent: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, color: tipo === "MINI_AUDITORIO" ? "#4ade80" : "#94a3b8" }}>
                 <IconMic />
+                <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase" }}>Reserva de Espaço</span>
               </div>
               <div style={{ fontWeight: 700, color: "#f0f4ff", fontSize: 14 }}>Mini Auditório</div>
               <div style={{ color: "#64748b", fontSize: 12, marginTop: 4 }}>Prédio 14, Sala 109</div>
@@ -303,8 +388,24 @@ export default function HomePage() {
       </div>
 
       {/* Formulário */}
-      <div style={{ maxWidth: 760, margin: "0 auto", padding: "40px 24px 80px" }}>
+      <div style={{ maxWidth: 780, margin: "0 auto", padding: "40px 24px 80px" }}>
         <form onSubmit={handleSubmit} className="fade-in">
+          {erro && (
+            <div
+              style={{
+                background: "rgba(239, 68, 68, 0.1)",
+                border: "1px solid rgba(239, 68, 68, 0.3)",
+                borderRadius: 8,
+                padding: "12px 16px",
+                color: "#f87171",
+                marginBottom: 20,
+                fontSize: 14,
+              }}
+            >
+              ⚠️ {erro}
+            </div>
+          )}
+
           <div className="card" style={{ marginBottom: 24 }}>
             <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20, color: "#f0f4ff", display: "flex", alignItems: "center", gap: 8 }}>
               👤 Seus Dados
@@ -353,21 +454,22 @@ export default function HomePage() {
                 />
               </div>
 
+              {/* Seletor de Duração */}
               <div>
                 <label className="label">Duração do Evento *</label>
-                <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+                <div style={{ display: "flex", gap: 12 }}>
                   <button
                     type="button"
-                    className={`btn ${!form.multiplosDias ? "btn-primary" : "btn-secondary"}`}
-                    onClick={() => setForm(p => ({ ...p, multiplosDias: false }))}
+                    className={`btn ${!multiplosDias ? "btn-primary" : "btn-secondary"}`}
+                    onClick={() => setMultiplosDias(false)}
                     style={{ flex: 1, fontSize: 13 }}
                   >
                     📆 Dia Único
                   </button>
                   <button
                     type="button"
-                    className={`btn ${form.multiplosDias ? "btn-primary" : "btn-secondary"}`}
-                    onClick={() => setForm(p => ({ ...p, multiplosDias: true }))}
+                    className={`btn ${multiplosDias ? "btn-primary" : "btn-secondary"}`}
+                    onClick={() => setMultiplosDias(true)}
                     style={{ flex: 1, fontSize: 13 }}
                   >
                     📅 Múltiplos Dias
@@ -375,43 +477,98 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                <div>
-                  <label className="label">{form.multiplosDias ? "Data e Hora de Início (1º Dia) *" : "Data e Hora de Início *"}</label>
-                  <input
-                    className="input"
-                    type="datetime-local"
-                    name="dataInicio"
-                    value={form.dataInicio}
-                    onChange={handleChange}
-                    required
-                  />
+              {/* Formulário de Data/Hora: DIA ÚNICO */}
+              {!multiplosDias ? (
+                <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr", gap: 12, background: "rgba(0,102,51,0.06)", padding: 16, borderRadius: 8, border: "1px solid rgba(0,102,51,0.2)" }}>
+                  <div>
+                    <label className="label">Data do Evento *</label>
+                    <input
+                      className="input"
+                      type="date"
+                      value={diaUnico.data}
+                      onChange={(e) => setDiaUnico(p => ({ ...p, data: e.target.value }))}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Hora de Início *</label>
+                    <input
+                      className="input"
+                      type="time"
+                      value={diaUnico.horaInicio}
+                      onChange={(e) => setDiaUnico(p => ({ ...p, horaInicio: e.target.value }))}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Hora de Fim *</label>
+                    <input
+                      className="input"
+                      type="time"
+                      value={diaUnico.horaFim}
+                      onChange={(e) => setDiaUnico(p => ({ ...p, horaFim: e.target.value }))}
+                      required
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="label">{form.multiplosDias ? "Data e Hora de Fim (Último Dia) *" : "Data e Hora de Fim *"}</label>
-                  <input
-                    className="input"
-                    type="datetime-local"
-                    name="dataFim"
-                    value={form.dataFim}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-              </div>
+              ) : (
+                /* Formulário de Data/Hora: MÚLTIPLOS DIAS */
+                <div style={{ display: "flex", flexDirection: "column", gap: 12, background: "rgba(0,102,51,0.06)", padding: 16, borderRadius: 8, border: "1px solid rgba(0,102,51,0.2)" }}>
+                  <label className="label">Datas e Horários dos Dias do Evento</label>
+                  {diasLista.map((d, index) => (
+                    <div key={index} style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr auto", gap: 10, alignItems: "end" }}>
+                      <div>
+                        {index === 0 && <label style={{ fontSize: 11, color: "#94a3b8", display: "block", marginBottom: 4 }}>Data do Dia {index + 1}</label>}
+                        <input
+                          className="input"
+                          type="date"
+                          value={d.data}
+                          onChange={(e) => atualizarDiaLista(index, "data", e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div>
+                        {index === 0 && <label style={{ fontSize: 11, color: "#94a3b8", display: "block", marginBottom: 4 }}>Hora Início</label>}
+                        <input
+                          className="input"
+                          type="time"
+                          value={d.horaInicio}
+                          onChange={(e) => atualizarDiaLista(index, "horaInicio", e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div>
+                        {index === 0 && <label style={{ fontSize: 11, color: "#94a3b8", display: "block", marginBottom: 4 }}>Hora Fim</label>}
+                        <input
+                          className="input"
+                          type="time"
+                          value={d.horaFim}
+                          onChange={(e) => atualizarDiaLista(index, "horaFim", e.target.value)}
+                          required
+                        />
+                      </div>
+                      {diasLista.length > 1 && (
+                        <button
+                          type="button"
+                          className="btn btn-danger"
+                          onClick={() => removerDia(index)}
+                          style={{ padding: "10px 12px" }}
+                          title="Remover este dia"
+                        >
+                          🗑️
+                        </button>
+                      )}
+                    </div>
+                  ))}
 
-              {form.multiplosDias && (
-                <div>
-                  <label className="label">Detalhamento dos Dias e Horários *</label>
-                  <textarea
-                    className="input"
-                    name="detalhamentoDias"
-                    value={form.detalhamentoDias}
-                    onChange={handleChange}
-                    rows={3}
-                    placeholder="Especifique as datas e turnos de cada dia (Ex: Dia 10/08: 09h às 12h | Dia 11/08: 14h às 18h)"
-                    required
-                  />
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={adicionarDia}
+                    style={{ alignSelf: "flex-start", marginTop: 8, fontSize: 13 }}
+                  >
+                    ➕ Adicionar Outro Dia
+                  </button>
                 </div>
               )}
 
@@ -423,69 +580,46 @@ export default function HomePage() {
                     name="local"
                     value={form.local}
                     onChange={handleChange}
-                    placeholder="Ex: Prédio 7, Sala 301 – CCSH/UFSM"
+                    placeholder="Ex: Prédio 26, Auditório do Anexo I (CT)"
                     required
                   />
-                  <p style={{ color: "#64748b", fontSize: 12, marginTop: 4 }}>
-                    Informe prédio, sala e departamento/centro
-                  </p>
                 </div>
               ) : (
                 <div>
-                  <label className="label">Local</label>
+                  <label className="label">Local Reservado</label>
                   <input
                     className="input"
                     value="Prédio 14, Sala 109 – CTE/UFSM"
                     disabled
-                    style={{ opacity: 0.6, cursor: "not-allowed" }}
+                    style={{ opacity: 0.8 }}
                   />
                 </div>
               )}
 
               <div>
-                <label className="label">Descrição do Evento / Necessidades</label>
+                <label className="label">Descrição / Observações (opcional)</label>
                 <textarea
                   className="input"
                   name="descricao"
                   value={form.descricao}
                   onChange={handleChange}
-                  placeholder="Descreva o evento, número de participantes, necessidades técnicas especiais, etc."
                   rows={4}
-                  style={{ resize: "vertical" }}
+                  placeholder="Informe detalhes como estimativa de público, necessidade de microfones sem fio ou observações sobre a transmissão..."
                 />
               </div>
 
               <div>
-                <label className="label">Links ou Observações Adicionais</label>
+                <label className="label">Link para Programação / Arquivos (opcional)</label>
                 <input
                   className="input"
                   name="anexosLinks"
                   value={form.anexosLinks}
                   onChange={handleChange}
-                  placeholder="Ex: https://link-do-programa.ufsm.br"
+                  placeholder="Ex: https://drive.google.com/file/d/... (Link do edital/programação)"
                 />
-                <p style={{ color: "#64748b", fontSize: 12, marginTop: 4 }}>
-                  Cole links relevantes, documentos ou informações adicionais
-                </p>
               </div>
             </div>
           </div>
-
-          {erro && (
-            <div
-              style={{
-                background: "rgba(239,68,68,0.1)",
-                border: "1px solid rgba(239,68,68,0.3)",
-                borderRadius: 8,
-                padding: "12px 16px",
-                color: "#f87171",
-                marginBottom: 16,
-                fontSize: 14,
-              }}
-            >
-              ⚠️ {erro}
-            </div>
-          )}
 
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <button
@@ -494,33 +628,11 @@ export default function HomePage() {
               disabled={carregando}
               style={{ padding: "14px 32px", fontSize: 16 }}
             >
-              {carregando ? (
-                <>
-                  <span className="pulse">⏳</span> Enviando...
-                </>
-              ) : (
-                <>
-                  Enviar Solicitação <IconArrow />
-                </>
-              )}
+              {carregando ? "⏳ Enviando Solicitação..." : "Enviar Solicitação ➤"}
             </button>
           </div>
         </form>
       </div>
-
-      {/* Footer */}
-      <footer
-        style={{
-          background: "var(--bg-secondary)",
-          borderTop: "1px solid var(--border)",
-          padding: "24px",
-          textAlign: "center",
-          color: "var(--text-muted)",
-          fontSize: 13,
-        }}
-      >
-        <strong style={{ color: "#4ade80" }}>Agenda Multiweb</strong> — Coordenadoria de Tecnologia Educacional (CTE) — UFSM
-      </footer>
     </div>
   );
 }

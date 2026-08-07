@@ -156,27 +156,30 @@ export default function AgendaPage() {
   // Criar evento manual
   const criarEventoManual = async () => {
     setErroManual("");
-    if (!novoEvento.titulo || !novoEvento.dataInicio || !novoEvento.dataFim || !novoEvento.local) {
-      setErroManual("Preencha todos os campos obrigatórios");
+    if (!novoEvento.titulo || !novoEvento.data || !novoEvento.horaInicio || !novoEvento.horaFim || !novoEvento.local) {
+      setErroManual("Preencha a data, os horários e todos os campos obrigatórios");
       return;
     }
     setCriandoManual(true);
     try {
+      const dataInicioISO = new Date(`${novoEvento.data}T${novoEvento.horaInicio}`).toISOString();
+      const dataFimISO = new Date(`${novoEvento.data}T${novoEvento.horaFim}`).toISOString();
+
       const res = await fetch("/api/eventos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           titulo: novoEvento.titulo,
           tipo: novoEvento.tipo,
-          dataInicio: new Date(novoEvento.dataInicio).toISOString(),
-          dataFim: new Date(novoEvento.dataFim).toISOString(),
+          dataInicio: dataInicioISO,
+          dataFim: dataFimISO,
           local: novoEvento.local,
           descricao: novoEvento.descricao,
         }),
       });
       if (res.ok) {
         setModalNovoEvento(false);
-        setNovoEvento({ titulo: "", tipo: "TRANSMISSAO_EXTERNA", dataInicio: "", dataFim: "", local: "", descricao: "" });
+        setNovoEvento({ titulo: "", tipo: "TRANSMISSAO_EXTERNA", data: "", horaInicio: "08:00", horaFim: "12:00", local: "", descricao: "" });
         await buscarEventos();
       } else {
         const data = await res.json();
@@ -424,23 +427,32 @@ export default function AgendaPage() {
                 </select>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr", gap: 12 }}>
                 <div>
-                  <label className="label">Data & Hora de Início *</label>
+                  <label className="label">Data do Evento *</label>
                   <input
                     className="input"
-                    type="datetime-local"
-                    value={novoEvento.dataInicio}
-                    onChange={(e) => setNovoEvento(p => ({ ...p, dataInicio: e.target.value }))}
+                    type="date"
+                    value={novoEvento.data}
+                    onChange={(e) => setNovoEvento(p => ({ ...p, data: e.target.value }))}
                   />
                 </div>
                 <div>
-                  <label className="label">Data & Hora de Fim *</label>
+                  <label className="label">Hora Início *</label>
                   <input
                     className="input"
-                    type="datetime-local"
-                    value={novoEvento.dataFim}
-                    onChange={(e) => setNovoEvento(p => ({ ...p, dataFim: e.target.value }))}
+                    type="time"
+                    value={novoEvento.horaInicio}
+                    onChange={(e) => setNovoEvento(p => ({ ...p, horaInicio: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label className="label">Hora Fim *</label>
+                  <input
+                    className="input"
+                    type="time"
+                    value={novoEvento.horaFim}
+                    onChange={(e) => setNovoEvento(p => ({ ...p, horaFim: e.target.value }))}
                   />
                 </div>
               </div>
