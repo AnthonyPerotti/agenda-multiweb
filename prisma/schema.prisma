@@ -56,6 +56,8 @@ model Ticket {
   // Threading de e-mail (agrupamento na caixa de entrada)
   emailMessageId   String?         // Message-ID do e-mail inicial de confirmação
 
+  arquivado        Boolean         @default(false)
+
   criadoEm        DateTime        @default(now())
   atualizadoEm    DateTime        @updatedAt
 

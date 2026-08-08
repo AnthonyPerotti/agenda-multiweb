@@ -190,17 +190,27 @@ export default function TicketDetalhe({ params }: { params: Promise<{ id: string
           </h1>
         </div>
 
-        {/* Aceitar ticket */}
-        {ticket.status !== "ACEITO" && ticket.status !== "RECUSADO" && ticket.status !== "FINALIZADO" && (
-          <button
-            className="btn btn-primary"
-            onClick={() => aceitarTicket(false)}
-            disabled={processandoAceite}
-            style={{ padding: "10px 24px" }}
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <a
+            href={`/api/tickets/${ticket.codigo}/ics`}
+            download={`evento-${ticket.codigo}.ics`}
+            className="btn btn-secondary"
+            style={{ fontSize: 13, textDecoration: "none" }}
           >
-            {processandoAceite ? "⏳" : "✅ Aceitar Ticket"}
-          </button>
-        )}
+            📅 Baixar .ics
+          </a>
+          {/* Aceitar ticket */}
+          {ticket.status !== "ACEITO" && ticket.status !== "RECUSADO" && ticket.status !== "FINALIZADO" && (
+            <button
+              className="btn btn-primary"
+              onClick={() => aceitarTicket(false)}
+              disabled={processandoAceite}
+              style={{ padding: "10px 24px" }}
+            >
+              {processandoAceite ? "⏳" : "✅ Aceitar Ticket"}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Painel de atualização de status */}

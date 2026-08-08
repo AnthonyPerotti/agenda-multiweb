@@ -58,6 +58,12 @@ export default function TicketsPage() {
   const [carregando, setCarregando] = useState(true);
   const [statusFiltro, setStatusFiltro] = useState("");
   const [tipoFiltro, setTipoFiltro] = useState("");
+  const [busca, setBusca] = useState("");
+  const [dataDe, setDataDe] = useState("");
+  const [dataAte, setDataAte] = useState("");
+  const [abaArquivado, setAbaArquivado] = useState(false);
+  const [selecionados, setSelecionados] = useState<string[]>([]);
+  const [processandoBulk, setProcessandoBulk] = useState(false);
   const [total, setTotal] = useState(0);
   const [pagina, setPagina] = useState(1);
 
@@ -67,70 +73,188 @@ export default function TicketsPage() {
       const params = new URLSearchParams();
       if (statusFiltro) params.set("status", statusFiltro);
       if (tipoFiltro) params.set("tipo", tipoFiltro);
+      if (busca) params.set("busca", busca);
+      if (dataDe) params.set("dataDe", dataDe);
+      if (dataAte) params.set("dataAte", dataAte);
+      if (abaArquivado) params.set("arquivado", "true");
       params.set("pagina", String(pagina));
 
       const res = await fetch(`/api/tickets?${params.toString()}`);
       const data = await res.json();
       setTickets(data.tickets ?? []);
       setTotal(data.paginacao?.total ?? 0);
+      setSelecionados([]);
     } finally {
       setCarregando(false);
     }
-  }, [statusFiltro, tipoFiltro, pagina]);
+  }, [statusFiltro, tipoFiltro, busca, dataDe, dataAte, abaArquivado, pagina]);
 
   useEffect(() => { buscarTickets(); }, [buscarTickets]);
 
-  // Resumo de contagens por status
-  const contagens = tickets.reduce((acc, t) => {
-    acc[t.status] = (acc[t.status] ?? 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  const toggleSelecionarTudo = () => {
+    if (selecionados.length === tickets.length) {
+      setSelecionados([]);
+    } else {
+      setSelecionados(tickets.map((t) => t.id));
+    }
+  };
+
+  const toggleSelecionar = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelecionados((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const executarAcaoMassa = async (acao: "arquivar" | "desarquivar" | "finalizar" | "excluir") => {
+    if (selecionados.length === 0) return;
+    if (acao === "excluir" && !confirm(`Tem certeza que deseja excluir permanentemente ${selecionados.length} ticket(s)?`)) return;
+
+    setProcessandoBulk(true);
+    try {
+      await fetch("/api/tickets/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: selecionados, acao }),
+      });
+      await buscarTickets();
+    } finally {
+      setProcessandoBulk(false);
+    }
+  };
 
   return (
     <div style={{ padding: "32px 32px 64px" }}>
       {/* Cabeçalho */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 32, flexWrap: "wrap", gap: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 16 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 800, color: "#f0f4ff", marginBottom: 4 }}>🎫 Tickets</h1>
-          <p style={{ color: "#64748b", fontSize: 14 }}>{total} solicitações no total</p>
+          <p style={{ color: "#64748b", fontSize: 14 }}>{total} solicitações encontradas</p>
+        </div>
+
+        {/* Abas Ativos / Arquivados */}
+        <div style={{ display: "flex", background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden" }}>
+          <button
+            onClick={() => { setAbaArquivado(false); setPagina(1); }}
+            style={{
+              background: !abaArquivado ? "rgba(0,102,51,0.3)" : "none",
+              border: "none", cursor: "pointer", padding: "8px 16px", fontSize: 13, fontWeight: 600,
+              color: !abaArquivado ? "#4ade80" : "#64748b", transition: "all 0.15s",
+            }}
+          >
+            📋 Ativos
+          </button>
+          <button
+            onClick={() => { setAbaArquivado(true); setPagina(1); }}
+            style={{
+              background: abaArquivado ? "rgba(0,102,51,0.3)" : "none",
+              border: "none", cursor: "pointer", padding: "8px 16px", fontSize: 13, fontWeight: 600,
+              color: abaArquivado ? "#4ade80" : "#64748b", transition: "all 0.15s",
+            }}
+          >
+            🗄️ Arquivados
+          </button>
         </div>
       </div>
 
-      {/* Filtros */}
-      <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
-        <select
-          className="input"
-          value={statusFiltro}
-          onChange={(e) => { setStatusFiltro(e.target.value); setPagina(1); }}
-          style={{ width: "auto", minWidth: 180 }}
-        >
-          {STATUS_FILTROS.map((s) => (
-            <option key={s} value={s}>{STATUS_LABELS[s]}</option>
-          ))}
-        </select>
-        <select
-          className="input"
-          value={tipoFiltro}
-          onChange={(e) => { setTipoFiltro(e.target.value); setPagina(1); }}
-          style={{ width: "auto", minWidth: 200 }}
-        >
-          {Object.entries(TIPO_LABELS).map(([v, l]) => (
-            <option key={v} value={v}>{l}</option>
-          ))}
-        </select>
-        {(statusFiltro || tipoFiltro) && (
-          <button
-            className="btn btn-secondary"
-            onClick={() => { setStatusFiltro(""); setTipoFiltro(""); setPagina(1); }}
-            style={{ fontSize: 13 }}
+      {/* Barra de Busca Global e Filtros Avançados */}
+      <div className="card" style={{ marginBottom: 20, padding: 16 }}>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+          {/* Busca instantânea */}
+          <div style={{ flex: 1, minWidth: 240 }}>
+            <input
+              className="input"
+              value={busca}
+              onChange={(e) => { setBusca(e.target.value); setPagina(1); }}
+              placeholder="🔍 Buscar por código (MW-...), solicitante, e-mail ou evento..."
+            />
+          </div>
+
+          <select
+            className="input"
+            value={statusFiltro}
+            onChange={(e) => { setStatusFiltro(e.target.value); setPagina(1); }}
+            style={{ width: "auto", minWidth: 160 }}
           >
-            ✕ Limpar filtros
+            {STATUS_FILTROS.map((s) => (
+              <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+            ))}
+          </select>
+
+          <select
+            className="input"
+            value={tipoFiltro}
+            onChange={(e) => { setTipoFiltro(e.target.value); setPagina(1); }}
+            style={{ width: "auto", minWidth: 180 }}
+          >
+            {Object.entries(TIPO_LABELS).map(([v, l]) => (
+              <option key={v} value={v}>{l}</option>
+            ))}
+          </select>
+
+          {/* Filtro por Intervalo de Data */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 12, color: "#64748b" }}>De:</span>
+            <input
+              type="date"
+              className="input"
+              value={dataDe}
+              onChange={(e) => { setDataDe(e.target.value); setPagina(1); }}
+              style={{ width: "auto" }}
+            />
+            <span style={{ fontSize: 12, color: "#64748b" }}>Até:</span>
+            <input
+              type="date"
+              className="input"
+              value={dataAte}
+              onChange={(e) => { setDataAte(e.target.value); setPagina(1); }}
+              style={{ width: "auto" }}
+            />
+          </div>
+
+          {(statusFiltro || tipoFiltro || busca || dataDe || dataAte) && (
+            <button
+              className="btn btn-secondary"
+              onClick={() => { setStatusFiltro(""); setTipoFiltro(""); setBusca(""); setDataDe(""); setDataAte(""); setPagina(1); }}
+              style={{ fontSize: 12 }}
+            >
+              ✕ Limpar
+            </button>
+          )}
+
+          <button className="btn btn-secondary" onClick={buscarTickets} style={{ fontSize: 12 }}>
+            🔄
           </button>
-        )}
-        <button className="btn btn-secondary" onClick={buscarTickets} style={{ marginLeft: "auto", fontSize: 13 }}>
-          🔄 Atualizar
-        </button>
+        </div>
       </div>
+
+      {/* Barra Flutuante de Ações em Massa */}
+      {selecionados.length > 0 && (
+        <div className="card fade-in" style={{ marginBottom: 16, background: "rgba(0,102,51,0.15)", borderColor: "rgba(0,102,51,0.4)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+          <span style={{ color: "#4ade80", fontWeight: 700, fontSize: 14 }}>
+            ☑️ {selecionados.length} ticket(s) selecionado(s)
+          </span>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {!abaArquivado ? (
+              <>
+                <button className="btn btn-secondary" onClick={() => executarAcaoMassa("arquivar")} disabled={processandoBulk} style={{ fontSize: 12 }}>
+                  🗄️ Arquivar
+                </button>
+                <button className="btn btn-secondary" onClick={() => executarAcaoMassa("finalizar")} disabled={processandoBulk} style={{ fontSize: 12 }}>
+                  ✅ Concluir
+                </button>
+              </>
+            ) : (
+              <button className="btn btn-secondary" onClick={() => executarAcaoMassa("desarquivar")} disabled={processandoBulk} style={{ fontSize: 12 }}>
+                📥 Desarquivar
+              </button>
+            )}
+            <button className="btn btn-secondary" onClick={() => executarAcaoMassa("excluir")} disabled={processandoBulk} style={{ fontSize: 12, color: "#f87171", borderColor: "rgba(239,68,68,0.4)" }}>
+              🗑️ Excluir
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Tabela */}
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
@@ -142,13 +266,21 @@ export default function TicketsPage() {
         ) : tickets.length === 0 ? (
           <div style={{ textAlign: "center", padding: "60px 0", color: "#64748b" }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>📭</div>
-            <p>Nenhum ticket encontrado com os filtros selecionados.</p>
+            <p>Nenhum ticket encontrado {abaArquivado ? "nos arquivados" : "com os filtros selecionados"}.</p>
           </div>
         ) : (
           <div style={{ overflowX: "auto" }}>
             <table className="table">
               <thead>
                 <tr>
+                  <th style={{ width: 40, textAlign: "center" }}>
+                    <input
+                      type="checkbox"
+                      checked={selecionados.length === tickets.length && tickets.length > 0}
+                      onChange={toggleSelecionarTudo}
+                      style={{ cursor: "pointer" }}
+                    />
+                  </th>
                   <th>Código</th>
                   <th>Tipo</th>
                   <th>Solicitante</th>
@@ -162,6 +294,14 @@ export default function TicketsPage() {
               <tbody>
                 {tickets.map((ticket) => (
                   <tr key={ticket.id} style={{ cursor: "pointer" }} onClick={() => router.push(`/dashboard/tickets/${ticket.id}`)}>
+                    <td style={{ textAlign: "center" }} onClick={(e) => toggleSelecionar(ticket.id, e)}>
+                      <input
+                        type="checkbox"
+                        checked={selecionados.includes(ticket.id)}
+                        onChange={() => {}}
+                        style={{ cursor: "pointer" }}
+                      />
+                    </td>
                     <td>
                       <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#4ade80", fontSize: 13 }}>
                         {ticket.codigo}

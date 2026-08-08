@@ -157,7 +157,7 @@ const HTML_PADRAO: Record<string, string> = {
 };
 
 export default function ConfiguracoesPage() {
-  const [aba, setAba] = useState<"smtp" | "templates" | "google" | "usuario">("smtp");
+  const [aba, setAba] = useState<"smtp" | "templates" | "google" | "regras" | "visual" | "backup" | "usuario">("smtp");
   const [configs, setConfigs] = useState<Record<string, string>>({});
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
@@ -303,19 +303,22 @@ export default function ConfiguracoesPage() {
       <p style={{ color: "#64748b", fontSize: 14, marginBottom: 28 }}>Configure SMTP, templates de e-mail e dados da conta de acesso</p>
 
       {/* Abas */}
-      <div style={{ display: "flex", gap: 4, borderBottom: "1px solid var(--border)", marginBottom: 28 }}>
+      <div style={{ display: "flex", gap: 4, borderBottom: "1px solid var(--border)", marginBottom: 28, overflowX: "auto", paddingBottom: 4 }}>
         {[
-          { k: "smtp", l: "📧 Servidor de E-mail" },
-          { k: "templates", l: "✉️ Templates" },
+          { k: "smtp", l: "📧 Servidor SMTP" },
+          { k: "templates", l: "✉️ Templates HTML" },
           { k: "google", l: "🗓️ Google Calendar" },
-          { k: "usuario", l: "👤 Usuário & Acesso" },
+          { k: "regras", l: "⏰ Regras & Lembretes" },
+          { k: "visual", l: "🎨 Visual & Cores" },
+          { k: "backup", l: "💾 Backup & Dados" },
+          { k: "usuario", l: "👤 Minha Conta" },
         ].map(({ k, l }) => (
           <button
             key={k}
             onClick={() => setAba(k as typeof aba)}
             style={{
               background: "none", border: "none", cursor: "pointer",
-              padding: "10px 20px", fontSize: 14, fontWeight: 600,
+              padding: "10px 16px", fontSize: 13, fontWeight: 600, whiteSpace: "nowrap",
               color: aba === k ? "#4ade80" : "#64748b",
               borderBottom: aba === k ? "2px solid #4ade80" : "2px solid transparent",
               marginBottom: -1, transition: "color 0.15s",
@@ -391,26 +394,6 @@ export default function ConfiguracoesPage() {
                 />
                 <span style={{ color: "#94a3b8", fontSize: 14 }}>Usar SSL/TLS (marque para porta 465)</span>
               </label>
-            </div>
-          </div>
-
-          <div className="card" style={{ marginBottom: 20 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#f0f4ff", marginBottom: 16 }}>⏱️ Regras de Antecedência para Agendamento</h3>
-            <div>
-              <label className="label">Antecedência Mínima de Solicitação (em horas)</label>
-              <input
-                className="input"
-                type="number"
-                min="0"
-                max="720"
-                value={configs.antecedencia_minima_horas ?? "48"}
-                onChange={(e) => atualizar("antecedencia_minima_horas", e.target.value)}
-                placeholder="48"
-                style={{ maxWidth: 200 }}
-              />
-              <p style={{ fontSize: 12, color: "#64748b", marginTop: 6 }}>
-                Define quantas horas de antecedência o público deve ter para abrir um ticket (padrão: 48h). Digite 0 para desativar a restrição.
-              </p>
             </div>
           </div>
 
@@ -604,7 +587,182 @@ export default function ConfiguracoesPage() {
         </div>
       )}
 
-      {/* ─── Aba Usuário & Acesso ─── */}
+      {/* ─── Aba Regras & Lembretes ─── */}
+      {aba === "regras" && (
+        <div className="fade-in">
+          <div className="card" style={{ marginBottom: 20 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#f0f4ff", marginBottom: 16 }}>⏱️ Antecedência Mínima para Agendamento</h3>
+            <div>
+              <label className="label">Antecedência Mínima de Solicitação (em horas)</label>
+              <input
+                className="input"
+                type="number"
+                min="0"
+                max="720"
+                value={configs.antecedencia_minima_horas ?? "48"}
+                onChange={(e) => atualizar("antecedencia_minima_horas", e.target.value)}
+                placeholder="48"
+                style={{ maxWidth: 200 }}
+              />
+              <p style={{ fontSize: 12, color: "#64748b", marginTop: 6 }}>
+                Define quantas horas de antecedência o público deve ter para abrir um ticket (padrão: 48h). Digite 0 para desativar a restrição.
+              </p>
+            </div>
+          </div>
+
+          <div className="card" style={{ marginBottom: 20 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#f0f4ff", marginBottom: 16 }}>⏰ Lembretes Automáticos Pré-Evento</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={configs.lembretes_ativos !== "false"}
+                    onChange={(e) => atualizar("lembretes_ativos", e.target.checked ? "true" : "false")}
+                    style={{ width: 16, height: 16, accentColor: "#006633" }}
+                  />
+                  <span style={{ color: "#f0f4ff", fontSize: 14, fontWeight: 600 }}>Ativar Lembretes Automáticos de Evento</span>
+                </label>
+                <p style={{ fontSize: 12, color: "#64748b", marginTop: 4, marginLeft: 24 }}>
+                  Dispara e-mails de lembrete pré-evento ao solicitante nos prazos abaixo.
+                </p>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div>
+                  <label className="label">1º Lembrete (Horas antes do evento)</label>
+                  <input
+                    className="input"
+                    type="number"
+                    min="1"
+                    max="168"
+                    value={configs.lembrete_horas_1 ?? "24"}
+                    onChange={(e) => atualizar("lembrete_horas_1", e.target.value)}
+                    placeholder="24"
+                  />
+                  <span style={{ fontSize: 11, color: "#64748b" }}>Padrão: 24h antes</span>
+                </div>
+                <div>
+                  <label className="label">2º Lembrete (Horas antes do evento)</label>
+                  <input
+                    className="input"
+                    type="number"
+                    min="1"
+                    max="48"
+                    value={configs.lembrete_horas_2 ?? "2"}
+                    onChange={(e) => atualizar("lembrete_horas_2", e.target.value)}
+                    placeholder="2"
+                  />
+                  <span style={{ fontSize: 11, color: "#64748b" }}>Padrão: 2h antes</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <button className="btn btn-primary" onClick={salvar} disabled={salvando}>
+              {salvando ? "⏳ Salvando..." : "💾 Salvar Regras & Lembretes"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Aba Visual & Cores ─── */}
+      {aba === "visual" && (
+        <div className="fade-in">
+          <div className="card" style={{ marginBottom: 20 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#f0f4ff", marginBottom: 16 }}>🎨 Cores das Categorias de Eventos</h3>
+            <p style={{ color: "#64748b", fontSize: 13, marginBottom: 20 }}>
+              Personalize as cores de cada tipo de evento para exibição no calendário e nas etiquetas.
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 20 }}>
+              <div>
+                <label className="label">📡 Transmissão Externa</label>
+                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                  <input
+                    type="color"
+                    value={configs.cor_transmissao ?? "#0ea5e9"}
+                    onChange={(e) => atualizar("cor_transmissao", e.target.value)}
+                    style={{ width: 40, height: 40, borderRadius: 6, border: "none", cursor: "pointer", background: "none" }}
+                  />
+                  <input
+                    className="input"
+                    value={configs.cor_transmissao ?? "#0ea5e9"}
+                    onChange={(e) => atualizar("cor_transmissao", e.target.value)}
+                    style={{ flex: 1, fontFamily: "monospace" }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="label">🎤 Mini Auditório (Sala 109)</label>
+                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                  <input
+                    type="color"
+                    value={configs.cor_auditorio ?? "#a855f7"}
+                    onChange={(e) => atualizar("cor_auditorio", e.target.value)}
+                    style={{ width: 40, height: 40, borderRadius: 6, border: "none", cursor: "pointer", background: "none" }}
+                  />
+                  <input
+                    className="input"
+                    value={configs.cor_auditorio ?? "#a855f7"}
+                    onChange={(e) => atualizar("cor_auditorio", e.target.value)}
+                    style={{ flex: 1, fontFamily: "monospace" }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="label">🎓 Colação / Formatura</label>
+                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                  <input
+                    type="color"
+                    value={configs.cor_formatura ?? "#f5a623"}
+                    onChange={(e) => atualizar("cor_formatura", e.target.value)}
+                    style={{ width: 40, height: 40, borderRadius: 6, border: "none", cursor: "pointer", background: "none" }}
+                  />
+                  <input
+                    className="input"
+                    value={configs.cor_formatura ?? "#f5a623"}
+                    onChange={(e) => atualizar("cor_formatura", e.target.value)}
+                    style={{ flex: 1, fontFamily: "monospace" }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <button className="btn btn-primary" onClick={salvar} disabled={salvando}>
+              {salvando ? "⏳ Salvando..." : "💾 Salvar Cores"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Aba Backup & Dados ─── */}
+      {aba === "backup" && (
+        <div className="fade-in">
+          <div className="card" style={{ marginBottom: 20 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#f0f4ff", marginBottom: 8 }}>💾 Download de Backup do Banco de Dados</h3>
+            <p style={{ color: "#64748b", fontSize: 13, marginBottom: 20 }}>
+              Baixa uma cópia inteira do banco de dados SQLite (`agenda.db`) contendo todas as solicitações, histórico, mensagens e configurações salvas.
+            </p>
+            <div>
+              <a
+                href="/api/configuracoes/backup"
+                download
+                className="btn btn-primary"
+                style={{ display: "inline-flex", gap: 8, textDecoration: "none", padding: "12px 24px" }}
+              >
+                💾 Baixar Backup do Banco de Dados (.db)
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Aba Minha Conta ─── */}
       {aba === "usuario" && (
         <div className="fade-in" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
           <AlterarEmail />

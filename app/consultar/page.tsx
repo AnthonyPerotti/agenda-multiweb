@@ -184,6 +184,14 @@ function ConsultarContent() {
                 <div style={{ fontSize: 20, fontWeight: 700, color: "#f0f4ff" }}>{ticket.tituloEvento}</div>
               </div>
               <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+                <a
+                  href={`/api/tickets/${ticket.codigo}/ics`}
+                  download={`evento-${ticket.codigo}.ics`}
+                  className="btn btn-secondary"
+                  style={{ fontSize: 13, gap: 6, textDecoration: "none" }}
+                >
+                  📅 Adicionar à Agenda (.ics)
+                </a>
                 <button className="btn btn-secondary" onClick={imprimirComprovante} style={{ fontSize: 13, gap: 6 }}>
                   🖨️ Imprimir Comprovante (PDF)
                 </button>
