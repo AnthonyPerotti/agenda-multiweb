@@ -649,48 +649,123 @@ export default function ConfiguracoesPage() {
 
           <div className="card" style={{ marginBottom: 20 }}>
             <h3 style={{ fontSize: 16, fontWeight: 700, color: "#f0f4ff", marginBottom: 16 }}>⏰ Lembretes Automáticos Pré-Evento</h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <div>
-                <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-                  <input
-                    type="checkbox"
-                    checked={configs.lembretes_ativos !== "false"}
-                    onChange={(e) => atualizar("lembretes_ativos", e.target.checked ? "true" : "false")}
-                    style={{ width: 16, height: 16, accentColor: "#006633" }}
-                  />
-                  <span style={{ color: "#f0f4ff", fontSize: 14, fontWeight: 600 }}>Ativar Lembretes Automáticos de Evento</span>
-                </label>
-                <p style={{ fontSize: 12, color: "#64748b", marginTop: 4, marginLeft: 24 }}>
-                  Dispara e-mails de lembrete pré-evento ao solicitante nos prazos abaixo.
-                </p>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                <div>
-                  <label className="label">1º Lembrete (Horas antes do evento)</label>
-                  <input
-                    className="input"
-                    type="number"
-                    min="0"
-                    max="168"
-                    value={configs.lembrete_horas_1 ?? "24"}
-                    onChange={(e) => atualizar("lembrete_horas_1", e.target.value)}
-                    placeholder="24"
-                  />
-                  <span style={{ fontSize: 11, color: "#64748b" }}>Padrão: 24h (Digite 0 para desativar o 1º lembrete)</span>
+            
+            {/* Lembretes para o Solicitante */}
+            <div style={{ marginBottom: 24, paddingBottom: 20, borderBottom: "1px solid var(--border)" }}>
+              <h4 style={{ fontSize: 14, fontWeight: 700, color: "#4ade80", marginBottom: 12 }}>
+                👤 Lembretes para o Solicitante (Público)
+              </h4>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                {/* 1º Lembrete Solicitante */}
+                <div style={{ background: "rgba(255,255,255,0.03)", padding: 14, borderRadius: 8, border: "1px solid var(--border)" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", marginBottom: 10 }}>
+                    <input
+                      type="checkbox"
+                      checked={configs.lembrete_solicitante_1_ativo !== "false"}
+                      onChange={(e) => atualizar("lembrete_solicitante_1_ativo", e.target.checked ? "true" : "false")}
+                      style={{ width: 16, height: 16, accentColor: "#006633" }}
+                    />
+                    <span style={{ color: "#f0f4ff", fontSize: 13, fontWeight: 600 }}>Ativar 1º Lembrete (Solicitante)</span>
+                  </label>
+                  <div>
+                    <label className="label" style={{ fontSize: 11 }}>Horas Antes do Evento</label>
+                    <input
+                      className="input"
+                      type="number"
+                      min="1"
+                      max="168"
+                      value={configs.lembrete_solicitante_1_horas ?? configs.lembrete_horas_1 ?? "24"}
+                      onChange={(e) => atualizar("lembrete_solicitante_1_horas", e.target.value)}
+                      disabled={configs.lembrete_solicitante_1_ativo === "false"}
+                      placeholder="24"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="label">2º Lembrete (Horas antes do evento)</label>
-                  <input
-                    className="input"
-                    type="number"
-                    min="0"
-                    max="48"
-                    value={configs.lembrete_horas_2 ?? "2"}
-                    onChange={(e) => atualizar("lembrete_horas_2", e.target.value)}
-                    placeholder="2"
-                  />
-                  <span style={{ fontSize: 11, color: "#64748b" }}>Padrão: 2h (Digite 0 para desativar o 2º lembrete)</span>
+
+                {/* 2º Lembrete Solicitante */}
+                <div style={{ background: "rgba(255,255,255,0.03)", padding: 14, borderRadius: 8, border: "1px solid var(--border)" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", marginBottom: 10 }}>
+                    <input
+                      type="checkbox"
+                      checked={configs.lembrete_solicitante_2_ativo !== "false"}
+                      onChange={(e) => atualizar("lembrete_solicitante_2_ativo", e.target.checked ? "true" : "false")}
+                      style={{ width: 16, height: 16, accentColor: "#006633" }}
+                    />
+                    <span style={{ color: "#f0f4ff", fontSize: 13, fontWeight: 600 }}>Ativar 2º Lembrete (Solicitante)</span>
+                  </label>
+                  <div>
+                    <label className="label" style={{ fontSize: 11 }}>Horas Antes do Evento</label>
+                    <input
+                      className="input"
+                      type="number"
+                      min="1"
+                      max="48"
+                      value={configs.lembrete_solicitante_2_horas ?? configs.lembrete_horas_2 ?? "2"}
+                      onChange={(e) => atualizar("lembrete_solicitante_2_horas", e.target.value)}
+                      disabled={configs.lembrete_solicitante_2_ativo === "false"}
+                      placeholder="2"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Lembretes para a Equipe CTE */}
+            <div>
+              <h4 style={{ fontSize: 14, fontWeight: 700, color: "#60a5fa", marginBottom: 12 }}>
+                👥 Lembretes para a Equipe CTE (Interno)
+              </h4>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                {/* 1º Lembrete Equipe */}
+                <div style={{ background: "rgba(255,255,255,0.03)", padding: 14, borderRadius: 8, border: "1px solid var(--border)" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", marginBottom: 10 }}>
+                    <input
+                      type="checkbox"
+                      checked={configs.lembrete_equipe_1_ativo !== "false"}
+                      onChange={(e) => atualizar("lembrete_equipe_1_ativo", e.target.checked ? "true" : "false")}
+                      style={{ width: 16, height: 16, accentColor: "#006633" }}
+                    />
+                    <span style={{ color: "#f0f4ff", fontSize: 13, fontWeight: 600 }}>Ativar 1º Lembrete (Equipe CTE)</span>
+                  </label>
+                  <div>
+                    <label className="label" style={{ fontSize: 11 }}>Horas Antes do Evento</label>
+                    <input
+                      className="input"
+                      type="number"
+                      min="1"
+                      max="168"
+                      value={configs.lembrete_equipe_1_horas ?? "24"}
+                      onChange={(e) => atualizar("lembrete_equipe_1_horas", e.target.value)}
+                      disabled={configs.lembrete_equipe_1_ativo === "false"}
+                      placeholder="24"
+                    />
+                  </div>
+                </div>
+
+                {/* 2º Lembrete Equipe */}
+                <div style={{ background: "rgba(255,255,255,0.03)", padding: 14, borderRadius: 8, border: "1px solid var(--border)" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", marginBottom: 10 }}>
+                    <input
+                      type="checkbox"
+                      checked={configs.lembrete_equipe_2_ativo !== "false"}
+                      onChange={(e) => atualizar("lembrete_equipe_2_ativo", e.target.checked ? "true" : "false")}
+                      style={{ width: 16, height: 16, accentColor: "#006633" }}
+                    />
+                    <span style={{ color: "#f0f4ff", fontSize: 13, fontWeight: 600 }}>Ativar 2º Lembrete (Equipe CTE)</span>
+                  </label>
+                  <div>
+                    <label className="label" style={{ fontSize: 11 }}>Horas Antes do Evento</label>
+                    <input
+                      className="input"
+                      type="number"
+                      min="1"
+                      max="48"
+                      value={configs.lembrete_equipe_2_horas ?? "2"}
+                      onChange={(e) => atualizar("lembrete_equipe_2_horas", e.target.value)}
+                      disabled={configs.lembrete_equipe_2_ativo === "false"}
+                      placeholder="2"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
