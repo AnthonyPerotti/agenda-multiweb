@@ -171,28 +171,37 @@ export async function GET(request: Request) {
   const pagina = parseInt(searchParams.get("pagina") ?? "1");
   const porPagina = 20;
 
-  const where: Record<string, unknown> = {
-    arquivado,
-  };
-  if (status) where.status = status;
-  if (tipo) where.tipo = tipo;
+  const andConditions: Record<string, unknown>[] = [];
+
+  if (arquivado) {
+    andConditions.push({ arquivado: true });
+  } else {
+    andConditions.push({ NOT: { arquivado: true } });
+  }
+
+  if (status) andConditions.push({ status });
+  if (tipo) andConditions.push({ tipo });
 
   if (busca) {
-    where.OR = [
-      { codigo: { contains: busca } },
-      { nomeSolicitante: { contains: busca } },
-      { emailSolicitante: { contains: busca } },
-      { tituloEvento: { contains: busca } },
-      { local: { contains: busca } },
-    ];
+    andConditions.push({
+      OR: [
+        { codigo: { contains: busca } },
+        { nomeSolicitante: { contains: busca } },
+        { emailSolicitante: { contains: busca } },
+        { tituloEvento: { contains: busca } },
+        { local: { contains: busca } },
+      ],
+    });
   }
 
   if (dataDe || dataAte) {
     const dataFilter: Record<string, unknown> = {};
     if (dataDe) dataFilter.gte = new Date(dataDe);
     if (dataAte) dataFilter.lte = new Date(`${dataAte}T23:59:59`);
-    where.dataInicio = dataFilter;
+    andConditions.push({ dataInicio: dataFilter });
   }
+
+  const where = { AND: andConditions };
 
   const [tickets, total] = await Promise.all([
     prisma.ticket.findMany({
