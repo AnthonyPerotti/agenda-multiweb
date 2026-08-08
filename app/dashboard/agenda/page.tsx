@@ -255,12 +255,12 @@ export default function AgendaPage() {
 
     return (
       <div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 1, marginBottom: 1 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 1, marginBottom: 1 }}>
           {DIAS_SEMANA.map((d) => (
             <div key={d} style={{ textAlign: "center", padding: "8px 0", fontSize: 12, fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>{d}</div>
           ))}
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 1 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 1 }}>
           {diasGrid.map((dia, i) => {
             const mesAtual = dia.getMonth() === dataAtual.getMonth();
             const ehHoje = isMesmoDay(dia, hoje);
@@ -270,6 +270,8 @@ export default function AgendaPage() {
                 key={i}
                 style={{
                   minHeight: 100,
+                  minWidth: 0,
+                  overflow: "hidden",
                   background: ehHoje ? "rgba(0,102,51,0.12)" : mesAtual ? "var(--bg-card)" : "rgba(17,24,39,0.5)",
                   border: ehHoje ? "1px solid rgba(0,102,51,0.5)" : "1px solid var(--border-light)",
                   borderRadius: 6,
@@ -309,12 +311,12 @@ export default function AgendaPage() {
     const dias = Array.from({ length: 7 }, (_, i) => { const d = new Date(seg); d.setDate(seg.getDate() + i); return d; });
 
     return (
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 8 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 8 }}>
         {dias.map((dia, i) => {
           const ehHoje = isMesmoDay(dia, hoje);
           const evsDia = eventosNoDia(dia);
           return (
-            <div key={i} style={{ minHeight: 400 }}>
+            <div key={i} style={{ minHeight: 400, minWidth: 0, overflow: "hidden" }}>
               <div style={{ textAlign: "center", padding: "8px 0 12px", fontSize: 12, fontWeight: 700, color: ehHoje ? "#4ade80" : "#64748b" }}>
                 <div>{DIAS_SEMANA[dia.getDay()]}</div>
                 <div style={{ fontSize: 20, fontWeight: 800, color: ehHoje ? "#4ade80" : "#f0f4ff" }}>{dia.getDate()}</div>
