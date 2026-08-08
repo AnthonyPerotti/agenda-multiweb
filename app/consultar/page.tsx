@@ -559,10 +559,11 @@ function ConsultarContent() {
               );
             })()}
           </div>
-        )}
-      </div>
+        );
+      })()}
     </div>
-  );
+  </div>
+);
 }
 
 export default function ConsultarPage() {
