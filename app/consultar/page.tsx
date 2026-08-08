@@ -290,20 +290,21 @@ function ConsultarContent() {
                     </div>
                   )}
 
-                {/* Histórico */}
-                {ticket.historico.length > 0 && (
-                  <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#94a3b8", marginBottom: 12 }}>📜 Histórico</div>
-                    {ticket.historico.map((h) => (
-                      <div key={h.id} style={{ display: "flex", gap: 10, marginBottom: 10, fontSize: 13, color: "#64748b" }}>
-                        <span>•</span>
-                        <span><strong style={{ color: "#94a3b8" }}>{h.acao}</strong> — {formatarData(h.criadoEm)}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+                  {/* Histórico */}
+                  {ticket.historico.length > 0 && (
+                    <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#94a3b8", marginBottom: 12 }}>📜 Histórico</div>
+                      {ticket.historico.map((h) => (
+                        <div key={h.id} style={{ display: "flex", gap: 10, marginBottom: 10, fontSize: 13, color: "#64748b" }}>
+                          <span>•</span>
+                          <span><strong style={{ color: "#94a3b8" }}>{h.acao}</strong> — {formatarData(h.criadoEm)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Aba Chat */}
             {aba === "chat" && (
