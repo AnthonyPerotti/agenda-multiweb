@@ -88,3 +88,35 @@ export function gerarMessageId(codigoTicket: string): string {
   const random = Math.random().toString(36).substring(2, 8);
   return `<${codigoTicket}-${timestamp}-${random}@agenda-multiweb.ufsm.br>`;
 }
+
+export interface DiasAgendamentoItem {
+  dataInicio: string;
+  dataFim: string;
+}
+
+export interface ParsedAnexosLinks {
+  linkOriginal: string | null;
+  diasAgendamento: DiasAgendamentoItem[] | null;
+}
+
+/**
+ * Faz a leitura segura do campo anexosLinks.
+ * Se for JSON armazenando múltiplos dias e/ou um link original, desestrutura os campos.
+ * Se for apenas uma string simples de link, retorna linkOriginal.
+ */
+export function parseAnexosLinks(str?: string | null): ParsedAnexosLinks {
+  if (!str) return { linkOriginal: null, diasAgendamento: null };
+  try {
+    const parsed = JSON.parse(str);
+    if (typeof parsed === "object" && parsed !== null) {
+      return {
+        linkOriginal: typeof parsed.linkOriginal === "string" ? parsed.linkOriginal : null,
+        diasAgendamento: Array.isArray(parsed.diasAgendamento) ? parsed.diasAgendamento : null,
+      };
+    }
+  } catch {
+    // String simples
+  }
+  return { linkOriginal: str, diasAgendamento: null };
+}
+

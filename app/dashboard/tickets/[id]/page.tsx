@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, use } from "react";
 import { useRouter } from "next/navigation";
+import { parseAnexosLinks } from "@/lib/utils";
 
 const STATUS_LABELS: Record<string, string> = {
   ABERTO: "Em Aberto", EM_ANALISE: "Em Análise", ACEITO: "Aceito",
@@ -256,45 +257,79 @@ export default function TicketDetalhe({ params }: { params: Promise<{ id: string
       </div>
 
       {/* Aba Detalhes */}
-      {aba === "detalhes" && (
-        <div className="card fade-in">
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-            {[
-              { label: "Solicitante", valor: ticket.nomeSolicitante },
-              { label: "E-mail", valor: ticket.emailSolicitante },
-              { label: "Local", valor: ticket.local },
-              { label: "Data de Abertura", valor: formatarData(ticket.criadoEm) },
-              { label: "Início do Evento", valor: formatarData(ticket.dataInicio) },
-              { label: "Fim do Evento", valor: formatarData(ticket.dataFim) },
-            ].map(({ label, valor }) => (
-              <div key={label}>
-                <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>{label}</div>
-                <div style={{ color: "#f0f4ff", fontSize: 14 }}>{valor}</div>
+      {aba === "detalhes" && (() => {
+        const parsedLinks = parseAnexosLinks(ticket.anexosLinks);
+        return (
+          <div className="card fade-in">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+              {[
+                { label: "Solicitante", valor: ticket.nomeSolicitante },
+                { label: "E-mail", valor: ticket.emailSolicitante },
+                { label: "Local", valor: ticket.local },
+                { label: "Data de Abertura", valor: formatarData(ticket.criadoEm) },
+                { label: "Início do Evento", valor: formatarData(ticket.dataInicio) },
+                { label: "Fim do Evento", valor: formatarData(ticket.dataFim) },
+              ].map(({ label, valor }) => (
+                <div key={label}>
+                  <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>{label}</div>
+                  <div style={{ color: "#f0f4ff", fontSize: 14 }}>{valor}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Cronograma de Múltiplos Dias */}
+            {parsedLinks.diasAgendamento && parsedLinks.diasAgendamento.length > 0 && (
+              <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
+                <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>
+                  📅 Cronograma Detalhado do Evento ({parsedLinks.diasAgendamento.length} dias)
+                </div>
+                <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
+                  {parsedLinks.diasAgendamento.map((d, idx) => {
+                    const dtIni = new Date(d.dataInicio);
+                    const dtFim = new Date(d.dataFim);
+                    return (
+                      <div key={idx} style={{ background: "rgba(0,102,51,0.12)", border: "1px solid rgba(0,102,51,0.3)", padding: "10px 14px", borderRadius: 8 }}>
+                        <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 700 }}>Dia {idx + 1}</div>
+                        <div style={{ color: "#4ade80", fontWeight: 700, fontSize: 14, marginTop: 2 }}>
+                          {dtIni.toLocaleDateString("pt-BR")}
+                        </div>
+                        <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 2 }}>
+                          ⏰ {dtIni.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} às {dtFim.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            ))}
+            )}
+
+            {ticket.descricao && (
+              <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
+                <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Descrição</div>
+                <div style={{ color: "#94a3b8", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{ticket.descricao}</div>
+              </div>
+            )}
+
+            {parsedLinks.linkOriginal && (
+              <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
+                <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Links / Anexos</div>
+                <a href={parsedLinks.linkOriginal} target="_blank" rel="noopener noreferrer" style={{ color: "#60a5fa", fontSize: 14, textDecoration: "underline", wordBreak: "break-all" }}>
+                  🔗 {parsedLinks.linkOriginal}
+                </a>
+              </div>
+            )}
+
+            {(ticket.evento || (ticket.eventos && ticket.eventos.length > 0)) && (
+              <div style={{ marginTop: 16, padding: "12px 16px", background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 8 }}>
+                <span style={{ color: "#4ade80", fontSize: 13, fontWeight: 600 }}>
+                  ✅ Evento registrado na agenda
+                  {(ticket.evento?.googleEventId || ticket.eventos?.[0]?.googleEventId) ? " • 🔄 Sincronizado com Google Calendar" : ""}
+                </span>
+              </div>
+            )}
           </div>
-          {ticket.descricao && (
-            <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
-              <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Descrição</div>
-              <div style={{ color: "#94a3b8", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{ticket.descricao}</div>
-            </div>
-          )}
-          {ticket.anexosLinks && (
-            <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
-              <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Links / Anexos</div>
-              <div style={{ color: "#60a5fa", fontSize: 14 }}>{ticket.anexosLinks}</div>
-            </div>
-          )}
-          {(ticket.evento || (ticket.eventos && ticket.eventos.length > 0)) && (
-            <div style={{ marginTop: 16, padding: "12px 16px", background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 8 }}>
-              <span style={{ color: "#4ade80", fontSize: 13, fontWeight: 600 }}>
-                ✅ Evento registrado na agenda
-                {(ticket.evento?.googleEventId || ticket.eventos?.[0]?.googleEventId) ? " • 🔄 Sincronizado com Google Calendar" : ""}
-              </span>
-            </div>
-          )}
-        </div>
-      )}
+        );
+      })()}
 
       {/* Aba Chat */}
       {aba === "chat" && (

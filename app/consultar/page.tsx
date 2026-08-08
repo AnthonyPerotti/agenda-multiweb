@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
+import { parseAnexosLinks } from "@/lib/utils";
 
 const STATUS_CONFIG: Record<string, { label: string; cor: string; icone: string }> = {
   ABERTO: { label: "Em Aberto", cor: "#60a5fa", icone: "🔵" },
@@ -227,29 +228,67 @@ function ConsultarContent() {
             </div>
 
             {/* Aba Detalhes */}
-            {aba === "detalhes" && (
-              <div className="card fade-in no-print">
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                  {[
-                    { label: "Solicitante", valor: `${ticket.nomeSolicitante} (${ticket.emailSolicitante})` },
-                    { label: "Tipo", valor: ticket.tipo === "TRANSMISSAO_EXTERNA" ? "📡 Transmissão Externa" : "🎤 Mini Auditório" },
-                    { label: "Local", valor: ticket.local },
-                    { label: "Início", valor: formatarData(ticket.dataInicio) },
-                    { label: "Fim", valor: formatarData(ticket.dataFim) },
-                    { label: "Aberto em", valor: formatarData(ticket.criadoEm) },
-                  ].map(({ label, valor }) => (
-                    <div key={label}>
-                      <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>{label}</div>
-                      <div style={{ color: "#f0f4ff", fontSize: 14 }}>{valor}</div>
-                    </div>
-                  ))}
-                </div>
-                {ticket.descricao && (
-                  <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
-                    <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Descrição</div>
-                    <div style={{ color: "#94a3b8", fontSize: 14, lineHeight: 1.6 }}>{ticket.descricao}</div>
+            {aba === "detalhes" && (() => {
+              const parsedLinks = parseAnexosLinks(ticket.anexosLinks);
+              return (
+                <div className="card fade-in no-print">
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                    {[
+                      { label: "Solicitante", valor: `${ticket.nomeSolicitante} (${ticket.emailSolicitante})` },
+                      { label: "Tipo", valor: ticket.tipo === "TRANSMISSAO_EXTERNA" ? "📡 Transmissão Externa" : "🎤 Mini Auditório" },
+                      { label: "Local", valor: ticket.local },
+                      { label: "Início", valor: formatarData(ticket.dataInicio) },
+                      { label: "Fim", valor: formatarData(ticket.dataFim) },
+                      { label: "Aberto em", valor: formatarData(ticket.criadoEm) },
+                    ].map(({ label, valor }) => (
+                      <div key={label}>
+                        <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>{label}</div>
+                        <div style={{ color: "#f0f4ff", fontSize: 14 }}>{valor}</div>
+                      </div>
+                    ))}
                   </div>
-                )}
+
+                  {/* Cronograma de Múltiplos Dias */}
+                  {parsedLinks.diasAgendamento && parsedLinks.diasAgendamento.length > 0 && (
+                    <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
+                      <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>
+                        📅 Cronograma Detalhado ({parsedLinks.diasAgendamento.length} dias)
+                      </div>
+                      <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
+                        {parsedLinks.diasAgendamento.map((d, idx) => {
+                          const dtIni = new Date(d.dataInicio);
+                          const dtFim = new Date(d.dataFim);
+                          return (
+                            <div key={idx} style={{ background: "rgba(0,102,51,0.12)", border: "1px solid rgba(0,102,51,0.3)", padding: "10px 14px", borderRadius: 8 }}>
+                              <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 700 }}>Dia {idx + 1}</div>
+                              <div style={{ color: "#4ade80", fontWeight: 700, fontSize: 14, marginTop: 2 }}>
+                                {dtIni.toLocaleDateString("pt-BR")}
+                              </div>
+                              <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 2 }}>
+                                ⏰ {dtIni.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} às {dtFim.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {ticket.descricao && (
+                    <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
+                      <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Descrição</div>
+                      <div style={{ color: "#94a3b8", fontSize: 14, lineHeight: 1.6 }}>{ticket.descricao}</div>
+                    </div>
+                  )}
+
+                  {parsedLinks.linkOriginal && (
+                    <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
+                      <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Links / Anexos</div>
+                      <a href={parsedLinks.linkOriginal} target="_blank" rel="noopener noreferrer" style={{ color: "#60a5fa", fontSize: 14, textDecoration: "underline", wordBreak: "break-all" }}>
+                        🔗 {parsedLinks.linkOriginal}
+                      </a>
+                    </div>
+                  )}
 
                 {/* Histórico */}
                 {ticket.historico.length > 0 && (

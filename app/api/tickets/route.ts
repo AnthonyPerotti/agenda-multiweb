@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { gerarCodigoTicket, formatarData, labelTipo } from "@/lib/utils";
+import { gerarCodigoTicket, formatarData, labelTipo, parseAnexosLinks } from "@/lib/utils";
 import { enviarConfirmacaoTicket, enviarNotificacaoEquipe } from "@/lib/email";
 import { z } from "zod";
 
@@ -88,13 +88,30 @@ export async function POST(request: Request) {
     // Tentar enviar e-mail de confirmação (silenciosamente em caso de erro de SMTP)
     let emailMessageId: string | null = null;
     try {
+      const parsedLinks = parseAnexosLinks(ticket.anexosLinks);
+      let strDataInicio = formatarData(ticket.dataInicio);
+      let strDataFim = formatarData(ticket.dataFim);
+
+      if (parsedLinks.diasAgendamento && parsedLinks.diasAgendamento.length > 1) {
+        const linhas = parsedLinks.diasAgendamento.map((d, idx) => {
+          const dtIni = new Date(d.dataInicio);
+          const dtFim = new Date(d.dataFim);
+          const dateStr = dtIni.toLocaleDateString("pt-BR");
+          const timeIniStr = dtIni.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+          const timeFimStr = dtFim.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+          return `• <strong>Dia ${idx + 1} (${dateStr}):</strong> ${timeIniStr} às ${timeFimStr}`;
+        });
+        const blocoCronograma = `<div style="margin-top: 10px; padding: 12px; background: #e8f5e9; border-left: 4px solid #006633; border-radius: 6px; font-size: 13px; color: #1b5e20;"><strong>📅 Cronograma de Múltiplos Dias:</strong><br>${linhas.join("<br>")}</div>`;
+        strDataInicio = `${strDataInicio}<br>${blocoCronograma}`;
+      }
+
       emailMessageId = await enviarConfirmacaoTicket({
         para: ticket.emailSolicitante,
         nome: ticket.nomeSolicitante,
         codigo: ticket.codigo,
         titulo: ticket.tituloEvento,
-        dataInicio: formatarData(ticket.dataInicio),
-        dataFim: formatarData(ticket.dataFim),
+        dataInicio: strDataInicio,
+        dataFim: strDataFim,
         local: ticket.local,
         tipo: labelTipo(ticket.tipo),
       });
@@ -112,8 +129,8 @@ export async function POST(request: Request) {
         nomeSolicitante: ticket.nomeSolicitante,
         emailSolicitante: ticket.emailSolicitante,
         titulo: ticket.tituloEvento,
-        dataInicio: formatarData(ticket.dataInicio),
-        dataFim: formatarData(ticket.dataFim),
+        dataInicio: strDataInicio,
+        dataFim: strDataFim,
         local: ticket.local,
         tipo: labelTipo(ticket.tipo),
       });
