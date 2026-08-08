@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { criarEventoGoogle, googleCalendarConfigurado } from "@/lib/google-calendar";
-import { temConflito } from "@/lib/utils";
+import { parseAnexosLinks } from "@/lib/utils";
 import { enviarAtualizacaoStatus } from "@/lib/email";
 
 interface Params {
@@ -27,16 +27,25 @@ export async function POST(request: Request, { params }: Params) {
     return Response.json({ erro: "Este ticket já foi aceito" }, { status: 400 });
   }
 
-  // Verificar conflitos de horário na agenda (ignorando eventos do próprio ticket)
+  // Extrair dias exatos do cronograma de múltiplos dias (ou usar intervalo padrão)
+  const parsedLinks = parseAnexosLinks(ticket.anexosLinks);
+  let diasParaCriar = [{ dataInicio: ticket.dataInicio, dataFim: ticket.dataFim }];
+
+  if (parsedLinks.diasAgendamento && parsedLinks.diasAgendamento.length > 0) {
+    diasParaCriar = parsedLinks.diasAgendamento.map((d) => ({
+      dataInicio: new Date(d.dataInicio),
+      dataFim: new Date(d.dataFim),
+    }));
+  }
+
+  // Verificar conflitos de horário na agenda para cada slot específico do cronograma
   const eventosConflitantes = await prisma.evento.findMany({
     where: {
       ticketId: { not: id },
-      OR: [
-        {
-          dataInicio: { lt: ticket.dataFim },
-          dataFim: { gt: ticket.dataInicio },
-        },
-      ],
+      OR: diasParaCriar.map((slot) => ({
+        dataInicio: { lt: slot.dataFim },
+        dataFim: { gt: slot.dataInicio },
+      })),
     },
     select: {
       id: true,
@@ -58,22 +67,6 @@ export async function POST(request: Request, { params }: Params) {
       },
       { status: 409 }
     );
-  }
-
-  // Verificar se existem múltiplos dias no ticket
-  let diasParaCriar = [{ dataInicio: ticket.dataInicio, dataFim: ticket.dataFim }];
-  if (ticket.anexosLinks) {
-    try {
-      const parsedMeta = JSON.parse(ticket.anexosLinks);
-      if (Array.isArray(parsedMeta.diasAgendamento) && parsedMeta.diasAgendamento.length > 0) {
-        diasParaCriar = parsedMeta.diasAgendamento.map((d: { dataInicio: string; dataFim: string }) => ({
-          dataInicio: new Date(d.dataInicio),
-          dataFim: new Date(d.dataFim),
-        }));
-      }
-    } catch {
-      // anexosLinks é um texto/link normal
-    }
   }
 
   // Buscar eventos já existentes para este ticket

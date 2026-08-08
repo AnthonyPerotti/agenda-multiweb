@@ -2,7 +2,6 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { enviarAtualizacaoStatus } from "@/lib/email";
 import { criarEventoGoogle } from "@/lib/google-calendar";
-import { temConflito } from "@/lib/utils";
 import { z } from "zod";
 
 interface Params {
