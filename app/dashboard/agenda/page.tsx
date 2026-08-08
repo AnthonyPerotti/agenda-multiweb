@@ -150,10 +150,11 @@ export default function AgendaPage() {
   const tituloPeriodo = () => {
     if (view === "mes") return `${MESES[dataAtual.getMonth()]} ${dataAtual.getFullYear()}`;
     if (view === "semana") {
-      const seg = new Date(dataAtual);
-      seg.setDate(seg.getDate() - seg.getDay() + 1);
-      const sab = new Date(seg); sab.setDate(seg.getDate() + 6);
-      return `${formatarDataCurta(seg.toISOString())} – ${formatarDataCurta(sab.toISOString())}`;
+      const dom = new Date(dataAtual);
+      dom.setDate(dom.getDate() - dom.getDay());
+      const sab = new Date(dom);
+      sab.setDate(dom.getDate() + 6);
+      return `${formatarDataCurta(dom.toISOString())} – ${formatarDataCurta(sab.toISOString())}`;
     }
     return dataAtual.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
   };
@@ -306,9 +307,9 @@ export default function AgendaPage() {
 
   // Calendário semanal
   const renderSemana = () => {
-    const seg = new Date(dataAtual);
-    seg.setDate(seg.getDate() - seg.getDay() + 1);
-    const dias = Array.from({ length: 7 }, (_, i) => { const d = new Date(seg); d.setDate(seg.getDate() + i); return d; });
+    const dom = new Date(dataAtual);
+    dom.setDate(dom.getDate() - dom.getDay());
+    const dias = Array.from({ length: 7 }, (_, i) => { const d = new Date(dom); d.setDate(dom.getDate() + i); return d; });
 
     return (
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 8 }}>
