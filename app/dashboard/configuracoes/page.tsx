@@ -892,6 +892,7 @@ export default function ConfiguracoesPage() {
                 style={{ fontSize: 13, borderColor: "rgba(239,68,68,0.4)", color: "#f87171" }}
               >
                 {restaurando ? "⏳ Restaurando..." : "📥 Restaurar Banco de Dados"}
+              </button>
             </div>
           </div>
 
