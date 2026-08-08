@@ -44,6 +44,7 @@ interface Ticket {
   emailSolicitante: string;
   tituloEvento: string;
   descricao?: string;
+  anexosLinks?: string | null;
   dataInicio: string;
   dataFim: string;
   local: string;
