@@ -207,6 +207,9 @@ export default function TicketDetalhe({ params }: { params: Promise<{ id: string
           >
             📅 Adicionar à minha Agenda
           </a>
+          <button className="btn btn-secondary" onClick={() => window.print()} style={{ fontSize: 13, gap: 6 }}>
+            🖨️ Imprimir Comprovante (PDF)
+          </button>
           {/* Aceitar ticket */}
           {ticket.status !== "ACEITO" && ticket.status !== "RECUSADO" && ticket.status !== "FINALIZADO" && (
             <button
@@ -484,6 +487,120 @@ export default function TicketDetalhe({ params }: { params: Promise<{ id: string
           </div>
         </div>
       )}
+      {/* ─── DOCUMENTO IMPRESSO (Visível apenas ao imprimir ou salvar PDF) ─── */}
+      {(() => {
+        const parsedLinks = parseAnexosLinks(ticket.anexosLinks);
+        const descExibicao = (
+          parsedLinks.diasAgendamento?.length
+            ? ticket.descricao?.replace(/🗓 CRONOGRAMA DE MÚLTIPLOS DIAS:[\s\S]*?(?=\n\n|$)/g, "").trim()
+            : ticket.descricao
+        )?.trim();
+
+        return (
+          <div className="comprovante-print print-only">
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "3px solid #006633", paddingBottom: 16, marginBottom: 24, gap: 16 }}>
+              {/* Logo UFSM */}
+              <img src="/images/ufsm-logo.png" alt="UFSM" style={{ height: 64, objectFit: "contain" }} />
+
+              <div style={{ textAlign: "center", flex: 1 }}>
+                <h2 style={{ fontSize: 16, color: "#006633", fontWeight: 800, textTransform: "uppercase" }}>
+                  UNIVERSIDADE FEDERAL DE SANTA MARIA — UFSM
+                </h2>
+                <h3 style={{ fontSize: 13, color: "#003366", fontWeight: 700, marginTop: 2 }}>
+                  Coordenadoria de Tecnologia Educacional – CTE / Agenda Multiweb
+                </h3>
+                <h4 style={{ fontSize: 14, color: "#111827", fontWeight: 800, marginTop: 8, textTransform: "uppercase" }}>
+                  COMPROVANTE OFICIAL DE RESERVA E AGENDAMENTO
+                </h4>
+              </div>
+
+              {/* Logo CTE */}
+              <img src="/images/cte-logo.png" alt="CTE/UFSM" style={{ height: 52, objectFit: "contain" }} />
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc", padding: "16px 20px", borderRadius: 8, border: "1px solid #cbd5e1", marginBottom: 24 }}>
+              <div>
+                <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", fontWeight: 700 }}>Código de Acompanhamento</div>
+                <div style={{ fontSize: 24, fontWeight: 900, color: "#006633", letterSpacing: 2 }}>{ticket.codigo}</div>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", fontWeight: 700 }}>Situação Atual</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: ticket.status === "ACEITO" ? "#006633" : "#003366" }}>
+                  {STATUS_LABELS[ticket.status]?.toUpperCase()}
+                </div>
+              </div>
+            </div>
+
+            <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 24 }}>
+              <tbody>
+                {[
+                  ["Título do Evento", ticket.tituloEvento],
+                  ["Tipo de Serviço", ticket.tipo === "TRANSMISSAO_EXTERNA" ? "Transmissão Externa (Prédios UFSM)" : ticket.tipo === "COLACAO_FORMATURA" ? "Colação / Formatura" : "Mini Auditório (Prédio 14, Sala 109)"],
+                  ["Solicitante", ticket.emailSolicitante ? `${ticket.nomeSolicitante} (${ticket.emailSolicitante})` : ticket.nomeSolicitante],
+                  ["Data / Hora Início Geral", formatarData(ticket.dataInicio)],
+                  ["Data / Hora Fim Geral", formatarData(ticket.dataFim)],
+                  ["Local do Evento", ticket.local],
+                  ["Data de Emissão da Solicitação", formatarData(ticket.criadoEm)],
+                ].map(([label, valor]) => (
+                  <tr key={label as string} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                    <td style={{ padding: "10px 12px", fontWeight: 700, color: "#334155", width: "35%", background: "#f1f5f9" }}>{label}</td>
+                    <td style={{ padding: "10px 12px", color: "#0f172a" }}>{valor}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* Tabela de Cronograma Detalhado para Eventos de Múltiplos Dias */}
+            {parsedLinks.diasAgendamento && parsedLinks.diasAgendamento.length > 0 && (
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontWeight: 800, color: "#006633", marginBottom: 8, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  📅 Cronograma Detalhado da Reserva ({parsedLinks.diasAgendamento.length} Dias Solicitados)
+                </div>
+                <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #cbd5e1" }}>
+                  <thead>
+                    <tr style={{ background: "#f1f5f9", borderBottom: "2px solid #cbd5e1" }}>
+                      <th style={{ padding: "8px 12px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#334155", width: "15%" }}>Item</th>
+                      <th style={{ padding: "8px 12px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#334155", width: "45%" }}>Data do Evento</th>
+                      <th style={{ padding: "8px 12px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#334155", width: "40%" }}>Horário de Reserva</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {parsedLinks.diasAgendamento.map((d, idx) => {
+                      const dtIni = new Date(d.dataInicio);
+                      const dtFim = new Date(d.dataFim);
+                      const diaSemana = dtIni.toLocaleDateString("pt-BR", { weekday: "long" });
+                      return (
+                        <tr key={idx} style={{ borderBottom: "1px solid #e2e8f0", background: idx % 2 === 0 ? "#ffffff" : "#f8fafc" }}>
+                          <td style={{ padding: "8px 12px", fontSize: 12, fontWeight: 700, color: "#006633" }}>Dia {idx + 1}</td>
+                          <td style={{ padding: "8px 12px", fontSize: 12, color: "#0f172a", textTransform: "capitalize" }}>
+                            {dtIni.toLocaleDateString("pt-BR")} ({diaSemana})
+                          </td>
+                          <td style={{ padding: "8px 12px", fontSize: 12, color: "#0f172a" }}>
+                            {dtIni.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} às {dtFim.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {descExibicao && (
+              <div style={{ marginBottom: 24, padding: 16, background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: 8 }}>
+                <div style={{ fontWeight: 700, color: "#334155", marginBottom: 4, fontSize: 12, textTransform: "uppercase" }}>Descrição / Observações</div>
+                <div style={{ color: "#334155", fontSize: 13, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{descExibicao}</div>
+              </div>
+            )}
+
+            <div style={{ marginTop: 40, paddingTop: 16, borderTop: "1px solid #cbd5e1", fontSize: 11, color: "#64748b", textAlign: "center" }}>
+              Documento emitido automaticamente pelo sistema Agenda Multiweb – Coordenadoria de Tecnologia Educacional (CTE/UFSM).
+              <br />
+              Para verificar a autenticidade ou atualizar o status, acesse <strong>agenda.cte.edu</strong> e informe o código <strong>{ticket.codigo}</strong>.
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

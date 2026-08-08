@@ -456,10 +456,10 @@ function ConsultarContent() {
                 <tbody>
                   {[
                     ["Título do Evento", ticket.tituloEvento],
-                    ["Tipo de Serviço", ticket.tipo === "TRANSMISSAO_EXTERNA" ? "Transmissão Externa (Prédios UFSM)" : "Mini Auditório (Prédio 14, Sala 109)"],
+                    ["Tipo de Serviço", ticket.tipo === "TRANSMISSAO_EXTERNA" ? "Transmissão Externa (Prédios UFSM)" : ticket.tipo === "COLACAO_FORMATURA" ? "Colação / Formatura" : "Mini Auditório (Prédio 14, Sala 109)"],
                     ["Solicitante", ticket.emailSolicitante ? `${ticket.nomeSolicitante} (${ticket.emailSolicitante})` : ticket.nomeSolicitante],
-                    ["Data / Hora Início", formatarData(ticket.dataInicio)],
-                    ["Data / Hora Fim", formatarData(ticket.dataFim)],
+                    ["Data / Hora Início Geral", formatarData(ticket.dataInicio)],
+                    ["Data / Hora Fim Geral", formatarData(ticket.dataFim)],
                     ["Local do Evento", ticket.local],
                     ["Data de Emissão da Solicitação", formatarData(ticket.criadoEm)],
                   ].map(([label, valor]) => (
@@ -471,10 +471,46 @@ function ConsultarContent() {
                 </tbody>
               </table>
 
-              {ticket.descricao && (
+              {/* Tabela de Cronograma Detalhado para Eventos de Múltiplos Dias */}
+              {parsedLinks.diasAgendamento && parsedLinks.diasAgendamento.length > 0 && (
+                <div style={{ marginBottom: 24 }}>
+                  <div style={{ fontWeight: 800, color: "#006633", marginBottom: 8, fontSize: 13, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    📅 Cronograma Detalhado da Reserva ({parsedLinks.diasAgendamento.length} Dias Solicitados)
+                  </div>
+                  <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #cbd5e1" }}>
+                    <thead>
+                      <tr style={{ background: "#f1f5f9", borderBottom: "2px solid #cbd5e1" }}>
+                        <th style={{ padding: "8px 12px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#334155", width: "15%" }}>Item</th>
+                        <th style={{ padding: "8px 12px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#334155", width: "45%" }}>Data do Evento</th>
+                        <th style={{ padding: "8px 12px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#334155", width: "40%" }}>Horário de Reserva</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {parsedLinks.diasAgendamento.map((d, idx) => {
+                        const dtIni = new Date(d.dataInicio);
+                        const dtFim = new Date(d.dataFim);
+                        const diaSemana = dtIni.toLocaleDateString("pt-BR", { weekday: "long" });
+                        return (
+                          <tr key={idx} style={{ borderBottom: "1px solid #e2e8f0", background: idx % 2 === 0 ? "#ffffff" : "#f8fafc" }}>
+                            <td style={{ padding: "8px 12px", fontSize: 12, fontWeight: 700, color: "#006633" }}>Dia {idx + 1}</td>
+                            <td style={{ padding: "8px 12px", fontSize: 12, color: "#0f172a", textTransform: "capitalize" }}>
+                              {dtIni.toLocaleDateString("pt-BR")} ({diaSemana})
+                            </td>
+                            <td style={{ padding: "8px 12px", fontSize: 12, color: "#0f172a" }}>
+                              {dtIni.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} às {dtFim.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {descExibicao && (
                 <div style={{ marginBottom: 24, padding: 16, background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: 8 }}>
                   <div style={{ fontWeight: 700, color: "#334155", marginBottom: 4, fontSize: 12, textTransform: "uppercase" }}>Descrição / Observações</div>
-                  <div style={{ color: "#334155", fontSize: 13, lineHeight: 1.5 }}>{ticket.descricao}</div>
+                  <div style={{ color: "#334155", fontSize: 13, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{descExibicao}</div>
                 </div>
               )}
 
