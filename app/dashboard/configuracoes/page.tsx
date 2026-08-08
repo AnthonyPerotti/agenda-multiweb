@@ -892,9 +892,11 @@ export default function ConfiguracoesPage() {
                 style={{ fontSize: 13, borderColor: "rgba(239,68,68,0.4)", color: "#f87171" }}
               >
                 {restaurando ? "⏳ Restaurando..." : "📥 Restaurar Banco de Dados"}
-              </button>
             </div>
           </div>
+
+          {/* Gerenciamento Avançado de Tickets (Arquivar / Excluir em Lote) */}
+          <GerenciadorTicketsLote />
         </div>
       )}
 
@@ -1059,6 +1061,239 @@ function AlterarSenha() {
           {salvando ? "⏳ Alterando..." : "Alterar Senha"}
         </button>
       </div>
+    </div>
+  );
+}
+
+interface TicketLoteItem {
+  id: string;
+  codigo: string;
+  tituloEvento: string;
+  nomeSolicitante: string;
+  emailSolicitante: string;
+  status: string;
+  tipo: string;
+  arquivado: boolean;
+  criadoEm: string;
+}
+
+function GerenciadorTicketsLote() {
+  const [aberto, setAberto] = useState(false);
+  const [tickets, setTickets] = useState<TicketLoteItem[]>([]);
+  const [carregando, setCarregando] = useState(false);
+  const [busca, setBusca] = useState("");
+  const [selecionados, setSelecionados] = useState<string[]>([]);
+  const [processando, setProcessando] = useState(false);
+  const [feedback, setFeedback] = useState<{ tipo: "sucesso" | "erro"; mensagem: string } | null>(null);
+
+  const carregar = useCallback(async () => {
+    setCarregando(true);
+    try {
+      const res = await fetch("/api/configuracoes/gerenciar-tickets");
+      const data = await res.json();
+      if (res.ok) setTickets(data.tickets ?? []);
+    } catch {
+      // erro silencioso
+    } finally {
+      setCarregando(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (aberto) {
+      carregar();
+    }
+  }, [aberto, carregar]);
+
+  const filtrados = tickets.filter(t =>
+    t.codigo.toLowerCase().includes(busca.toLowerCase()) ||
+    t.tituloEvento.toLowerCase().includes(busca.toLowerCase()) ||
+    t.nomeSolicitante.toLowerCase().includes(busca.toLowerCase())
+  );
+
+  const todosSelecionados = filtrados.length > 0 && filtrados.every(t => selecionados.includes(t.id));
+
+  const alternarTodos = () => {
+    if (todosSelecionados) {
+      setSelecionados([]);
+    } else {
+      setSelecionados(filtrados.map(t => t.id));
+    }
+  };
+
+  const alternarUm = (id: string) => {
+    setSelecionados(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const executarAcao = async (acao: "arquivar" | "desarquivar" | "excluir") => {
+    if (selecionados.length === 0) return;
+
+    if (acao === "excluir") {
+      const conf = confirm(`⚠️ ATENÇÃO: Tem certeza que deseja EXCLUIR PERMANENTEMENTE ${selecionados.length} ticket(s)?\n\nEsta ação apagará todos os dados, mensagens e históricos do(s) ticket(s) e NÃO poderá ser desfeita!`);
+      if (!conf) return;
+    } else {
+      const msg = acao === "arquivar"
+        ? `Deseja ARQUIVAR os ${selecionados.length} ticket(s) selecionado(s)?`
+        : `Deseja DESARQUIVAR os ${selecionados.length} ticket(s) selecionado(s)?`;
+      if (!confirm(msg)) return;
+    }
+
+    setProcessando(true);
+    setFeedback(null);
+    try {
+      const res = await fetch("/api/configuracoes/gerenciar-tickets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ acao, ids: selecionados }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setFeedback({ tipo: "sucesso", mensagem: data.mensagem });
+        setSelecionados([]);
+        carregar();
+      } else {
+        setFeedback({ tipo: "erro", mensagem: data.erro ?? "Erro ao processar ação em lote" });
+      }
+    } catch {
+      setFeedback({ tipo: "erro", mensagem: "Erro de conexão ao processar requisição" });
+    } finally {
+      setProcessando(false);
+    }
+  };
+
+  return (
+    <div className="card" style={{ marginTop: 24, border: "1px solid rgba(255,255,255,0.1)" }}>
+      <button
+        onClick={() => setAberto(!aberto)}
+        style={{
+          width: "100%", background: "none", border: "none", color: "#94a3b8",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          cursor: "pointer", padding: "4px 0", fontSize: 14, fontWeight: 600,
+        }}
+      >
+        <span>🛠️ Gerenciamento Avançado de Tickets (Arquivar / Excluir em Lote)</span>
+        <span>{aberto ? "🔼 Ocultar" : "🔽 Expandir"}</span>
+      </button>
+
+      {aberto && (
+        <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border-light)" }}>
+          <p style={{ fontSize: 13, color: "#64748b", marginBottom: 16 }}>
+            Selecione múltiplos tickets para arquivar, desarquivar ou excluir permanentemente do sistema.
+          </p>
+
+          {feedback && (
+            <div style={{
+              background: feedback.tipo === "sucesso" ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
+              border: `1px solid ${feedback.tipo === "sucesso" ? "rgba(34,197,94,0.3)" : "rgba(239,68,68,0.3)"}`,
+              borderRadius: 8, padding: "10px 14px", color: feedback.tipo === "sucesso" ? "#4ade80" : "#f87171",
+              marginBottom: 16, fontSize: 13,
+            }}>
+              {feedback.tipo === "sucesso" ? "✅" : "⚠️"} {feedback.mensagem}
+            </div>
+          )}
+
+          <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
+            <input
+              className="input"
+              style={{ maxWidth: 300, fontSize: 13, padding: "8px 12px" }}
+              placeholder="🔍 Filtrar por código, título ou solicitante..."
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+            />
+
+            <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => executarAcao("arquivar")}
+                disabled={processando || selecionados.length === 0}
+                style={{ fontSize: 12, padding: "8px 14px" }}
+              >
+                📦 Arquivar ({selecionados.length})
+              </button>
+              <button
+                className="btn btn-secondary"
+                onClick={() => executarAcao("desarquivar")}
+                disabled={processando || selecionados.length === 0}
+                style={{ fontSize: 12, padding: "8px 14px" }}
+              >
+                📂 Desarquivar ({selecionados.length})
+              </button>
+              <button
+                className="btn btn-secondary"
+                onClick={() => executarAcao("excluir")}
+                disabled={processando || selecionados.length === 0}
+                style={{ fontSize: 12, padding: "8px 14px", background: "rgba(239,68,68,0.15)", borderColor: "rgba(239,68,68,0.4)", color: "#f87171" }}
+              >
+                🗑️ Excluir ({selecionados.length})
+              </button>
+            </div>
+          </div>
+
+          {carregando ? (
+            <div style={{ textAlign: "center", padding: "30px 0", color: "#64748b" }}>Carregando lista de tickets...</div>
+          ) : filtrados.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "30px 0", color: "#64748b" }}>Nenhum ticket encontrado.</div>
+          ) : (
+            <div style={{ maxHeight: 380, overflowY: "auto", border: "1px solid var(--border-light)", borderRadius: 8 }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <thead>
+                  <tr style={{ background: "rgba(255,255,255,0.03)", borderBottom: "1px solid var(--border-light)", textAlign: "left" }}>
+                    <th style={{ padding: "10px 12px", width: 40 }}>
+                      <input
+                        type="checkbox"
+                        checked={todosSelecionados}
+                        onChange={alternarTodos}
+                        style={{ cursor: "pointer", width: 16, height: 16 }}
+                      />
+                    </th>
+                    <th style={{ padding: "10px 12px", color: "#94a3b8" }}>Código</th>
+                    <th style={{ padding: "10px 12px", color: "#94a3b8" }}>Título / Evento</th>
+                    <th style={{ padding: "10px 12px", color: "#94a3b8" }}>Solicitante</th>
+                    <th style={{ padding: "10px 12px", color: "#94a3b8" }}>Status</th>
+                    <th style={{ padding: "10px 12px", color: "#94a3b8" }}>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtrados.map((t) => {
+                    const sel = selecionados.includes(t.id);
+                    return (
+                      <tr
+                        key={t.id}
+                        style={{
+                          borderBottom: "1px solid var(--border-light)",
+                          background: sel ? "rgba(0,102,51,0.1)" : "transparent",
+                          cursor: "pointer",
+                        }}
+                        onClick={() => alternarUm(t.id)}
+                      >
+                        <td style={{ padding: "10px 12px" }} onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={sel}
+                            onChange={() => alternarUm(t.id)}
+                            style={{ cursor: "pointer", width: 16, height: 16 }}
+                          />
+                        </td>
+                        <td style={{ padding: "10px 12px", fontWeight: 700, color: "#4ade80" }}>{t.codigo}</td>
+                        <td style={{ padding: "10px 12px", color: "#f0f4ff" }}>{t.tituloEvento}</td>
+                        <td style={{ padding: "10px 12px", color: "#94a3b8" }}>{t.nomeSolicitante}</td>
+                        <td style={{ padding: "10px 12px", color: "#94a3b8" }}>{t.status}</td>
+                        <td style={{ padding: "10px 12px" }}>
+                          {t.arquivado ? (
+                            <span style={{ fontSize: 11, background: "rgba(100,116,139,0.2)", color: "#94a3b8", padding: "2px 8px", borderRadius: 4 }}>📦 Arquivado</span>
+                          ) : (
+                            <span style={{ fontSize: 11, background: "rgba(34,197,94,0.15)", color: "#4ade80", padding: "2px 8px", borderRadius: 4 }}>🟢 Ativo</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
