@@ -371,7 +371,7 @@ function ConsultarContent() {
             )}
 
             {/* ─── DOCUMENTO IMPRESSO (Visível apenas ao imprimir ou salvar PDF) ─── */}
-            <div className="comprovante-print">
+            <div className="comprovante-print print-only">
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "3px solid #006633", paddingBottom: 16, marginBottom: 24, gap: 16 }}>
                 {/* Logo UFSM */}
                 <img src="/images/ufsm-logo.png" alt="UFSM" style={{ height: 64, objectFit: "contain" }} />

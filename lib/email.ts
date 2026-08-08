@@ -112,7 +112,7 @@ export async function enviarConfirmacaoTicket(params: {
 
   await enviarEmail({
     para: params.para,
-    assunto: `[Agenda Multiweb #${params.codigo}] Solicitação recebida: ${params.titulo}`,
+    assunto: `[Agenda Multiweb #${params.codigo}] ${params.titulo}`,
     html,
     messageId,
   });
@@ -131,7 +131,7 @@ export async function enviarAtualizacaoStatus(params: {
   titulo: string;
   status: string;
   mensagem?: string;
-  emailMessageIdOriginal: string;
+  emailMessageIdOriginal?: string;
 }) {
   const siteUrl = await getSiteUrl();
   const linkTicket = `${siteUrl}/consultar?codigo=${params.codigo}`;
@@ -144,26 +144,26 @@ export async function enviarAtualizacaoStatus(params: {
         ? "template_recusa"
         : "template_mensagem";
 
+  const blocoMensagem = params.mensagem?.trim()
+    ? `<div style="background: white; border-left: 4px solid #006633; padding: 16px; margin: 16px 0; border-radius: 0 8px 8px 0; color: #334155;">
+        <strong>Observação da equipe:</strong><br />${params.mensagem.replace(/\n/g, "<br />")}
+       </div>`
+    : "";
+
   const template = await getTemplate(chaveTemplate);
   const html = renderizarTemplate(template, {
     nome_solicitante: params.nome,
     codigo_ticket: params.codigo,
     titulo_evento: params.titulo,
     status_evento: params.status,
-    mensagem_equipe: params.mensagem ?? "",
+    mensagem_equipe: blocoMensagem,
+    conteudo_mensagem: params.mensagem?.replace(/\n/g, "<br />") ?? "",
     link_ticket: linkTicket,
   });
 
-  const labelStatus: Record<string, string> = {
-    EM_ANALISE: "Em Análise",
-    ACEITO: "Aceito ✓",
-    RECUSADO: "Recusado",
-    FINALIZADO: "Finalizado",
-  };
-
   await enviarEmail({
     para: params.para,
-    assunto: `[Agenda Multiweb #${params.codigo}] ${labelStatus[params.status] ?? params.status}: ${params.titulo}`,
+    assunto: `Re: [Agenda Multiweb #${params.codigo}] ${params.titulo}`,
     html,
     messageId: novoMessageId,
     inReplyTo: params.emailMessageIdOriginal,
@@ -180,7 +180,7 @@ export async function enviarNotificacaoMensagem(params: {
   codigo: string;
   titulo: string;
   conteudoMensagem: string;
-  emailMessageIdOriginal: string;
+  emailMessageIdOriginal?: string;
 }) {
   const siteUrl = await getSiteUrl();
   const linkTicket = `${siteUrl}/consultar?codigo=${params.codigo}`;
@@ -191,13 +191,14 @@ export async function enviarNotificacaoMensagem(params: {
     nome_solicitante: params.nome,
     codigo_ticket: params.codigo,
     titulo_evento: params.titulo,
-    conteudo_mensagem: params.conteudoMensagem,
+    conteudo_mensagem: params.conteudoMensagem.replace(/\n/g, "<br />"),
+    mensagem_equipe: params.conteudoMensagem.replace(/\n/g, "<br />"),
     link_ticket: linkTicket,
   });
 
   await enviarEmail({
     para: params.para,
-    assunto: `[Agenda Multiweb #${params.codigo}] Nova mensagem: ${params.titulo}`,
+    assunto: `Re: [Agenda Multiweb #${params.codigo}] ${params.titulo}`,
     html,
     messageId: novoMessageId,
     inReplyTo: params.emailMessageIdOriginal,
@@ -281,7 +282,7 @@ export async function enviarNotificacaoEquipe(params: {
   try {
     await enviarEmail({
       para: emailDestino,
-      assunto: `[Novo Ticket #${params.codigo}] ${params.titulo} (${params.nomeSolicitante})`,
+      assunto: `[Agenda Multiweb #${params.codigo}] ${params.titulo} (${params.nomeSolicitante})`,
       html,
     });
   } catch (err) {
