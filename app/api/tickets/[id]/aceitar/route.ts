@@ -124,6 +124,8 @@ export async function POST(request: Request, { params }: Params) {
     data: { status: "ACEITO" },
   });
 
+  const msgLimpa = mensagemEquipe?.trim();
+
   // Registrar ação no histórico
   await prisma.historicoAcao.create({
     data: {
@@ -135,6 +137,7 @@ export async function POST(request: Request, { params }: Params) {
         eventoId: evento.id,
         googleEventId,
         conflitosIgnorados: confirmarConflito ? eventosConflitantes.length : 0,
+        mensagem: msgLimpa || undefined,
       }),
     },
   });
@@ -148,11 +151,11 @@ export async function POST(request: Request, { params }: Params) {
         codigo: ticket.codigo,
         titulo: ticket.tituloEvento,
         status: "ACEITO",
-        mensagem: mensagemEquipe,
+        mensagem: msgLimpa,
         emailMessageIdOriginal: ticket.emailMessageId,
       });
     } catch (err) {
-      console.error("[Email] Erro ao enviar aceite:", err);
+      console.error("[Email] Erro ao enviar confirmação de aceite:", err);
     }
   }
 

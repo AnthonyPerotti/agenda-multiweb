@@ -302,13 +302,46 @@ function ConsultarContent() {
                   {/* Histórico */}
                   {ticket.historico.length > 0 && (
                     <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#94a3b8", marginBottom: 12 }}>📜 Histórico</div>
-                      {ticket.historico.map((h) => (
-                        <div key={h.id} style={{ display: "flex", gap: 10, marginBottom: 10, fontSize: 13, color: "#64748b" }}>
-                          <span>•</span>
-                          <span><strong style={{ color: "#94a3b8" }}>{h.acao}</strong> — {formatarData(h.criadoEm)}</span>
-                        </div>
-                      ))}
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#94a3b8", marginBottom: 12 }}>📜 Histórico de Ações</div>
+                      {ticket.historico.map((h) => {
+                        let msgTexto: string | null = null;
+                        if (h.detalhes) {
+                          try {
+                            const parsed = JSON.parse(h.detalhes);
+                            if (typeof parsed === "string") msgTexto = parsed;
+                            else if (parsed && typeof parsed.mensagem === "string" && parsed.mensagem.trim()) {
+                              msgTexto = parsed.mensagem.trim();
+                            }
+                          } catch {
+                            if (h.detalhes.trim() && !h.detalhes.startsWith("{")) msgTexto = h.detalhes.trim();
+                          }
+                        }
+
+                        return (
+                          <div key={h.id} style={{ marginBottom: 12, fontSize: 13, color: "#64748b" }}>
+                            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                              <span>•</span>
+                              <span><strong style={{ color: "#f0f4ff" }}>{h.acao}</strong> por {h.nomeUsuario} — {formatarData(h.criadoEm)}</span>
+                            </div>
+                            {msgTexto && (
+                              <div style={{
+                                marginTop: 6,
+                                marginLeft: 16,
+                                padding: "8px 12px",
+                                background: "rgba(0, 102, 51, 0.15)",
+                                borderLeft: "3px solid #4ade80",
+                                borderRadius: "0 6px 6px 0",
+                                color: "#e2e8f0",
+                                fontSize: 12,
+                                lineHeight: 1.4,
+                                whiteSpace: "pre-wrap",
+                              }}>
+                                💬 <strong>Mensagem enviada:</strong> "{msgTexto}"
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

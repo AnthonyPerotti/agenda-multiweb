@@ -127,7 +127,7 @@ export default function TicketDetalhe({ params }: { params: Promise<{ id: string
       const res = await fetch(`/api/tickets/${id}/aceitar`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirmarConflito }),
+        body: JSON.stringify({ confirmarConflito, mensagemEquipe: mensagemStatus }),
       });
       const data = await res.json().catch(() => null);
 
@@ -135,6 +135,7 @@ export default function TicketDetalhe({ params }: { params: Promise<{ id: string
         setModal({ tipo: "conflito", conflitos: data.eventosConflitantes });
       } else if (res.ok && data?.sucesso) {
         setModal(null);
+        setMensagemStatus("");
         await buscarTicketCompleto();
       } else if (data?.erro || data?.mensagem) {
         alert(data.erro || data.mensagem);
@@ -401,15 +402,45 @@ export default function TicketDetalhe({ params }: { params: Promise<{ id: string
             <div style={{ textAlign: "center", padding: "40px 0", color: "#64748b" }}>Nenhuma ação registrada.</div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {ticket.historico.map((h) => (
-                <div key={h.id} style={{ display: "flex", gap: 12, padding: "12px 0", borderBottom: "1px solid var(--border-light)" }}>
-                  <div style={{ width: 32, height: 32, background: "rgba(0,102,51,0.2)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>📝</div>
-                  <div>
-                    <div style={{ color: "#f0f4ff", fontSize: 14, fontWeight: 500 }}>{h.acao}</div>
-                    <div style={{ color: "#64748b", fontSize: 12, marginTop: 2 }}>por {h.nomeUsuario} · {formatarData(h.criadoEm)}</div>
+              {ticket.historico.map((h) => {
+                let msgTexto: string | null = null;
+                if (h.detalhes) {
+                  try {
+                    const parsed = JSON.parse(h.detalhes);
+                    if (typeof parsed === "string") msgTexto = parsed;
+                    else if (parsed && typeof parsed.mensagem === "string" && parsed.mensagem.trim()) {
+                      msgTexto = parsed.mensagem.trim();
+                    }
+                  } catch {
+                    if (h.detalhes.trim() && !h.detalhes.startsWith("{")) msgTexto = h.detalhes.trim();
+                  }
+                }
+
+                return (
+                  <div key={h.id} style={{ display: "flex", gap: 12, padding: "12px 0", borderBottom: "1px solid var(--border-light)" }}>
+                    <div style={{ width: 32, height: 32, background: "rgba(0,102,51,0.2)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>📝</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ color: "#f0f4ff", fontSize: 14, fontWeight: 600 }}>{h.acao}</div>
+                      <div style={{ color: "#64748b", fontSize: 12, marginTop: 2 }}>por {h.nomeUsuario} · {formatarData(h.criadoEm)}</div>
+                      {msgTexto && (
+                        <div style={{
+                          marginTop: 8,
+                          padding: "10px 14px",
+                          background: "rgba(0, 102, 51, 0.12)",
+                          borderLeft: "3px solid #4ade80",
+                          borderRadius: "0 8px 8px 0",
+                          color: "#e2e8f0",
+                          fontSize: 13,
+                          lineHeight: 1.5,
+                          whiteSpace: "pre-wrap",
+                        }}>
+                          💬 <strong>Mensagem enviada ao solicitante:</strong><br />"{msgTexto}"
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

@@ -67,12 +67,14 @@ export async function PATCH(request: Request, { params }: Params) {
   }
 
   // Registrar ação no histórico
+  const msgLimpa = dados.mensagemEquipe?.trim();
   await prisma.historicoAcao.create({
     data: {
       ticketId: id,
       usuarioId: session.user.id,
       nomeUsuario: session.user.name ?? "Equipe CTE",
       acao: dados.status ? `Status alterado para ${dados.status}` : "Ticket atualizado",
+      detalhes: msgLimpa ? JSON.stringify({ mensagem: msgLimpa }) : null,
     },
   });
 
