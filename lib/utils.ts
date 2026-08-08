@@ -133,20 +133,24 @@ export function gerarGoogleCalendarUrl(params: {
   const dInicio = typeof params.dataInicio === "string" ? new Date(params.dataInicio) : params.dataInicio;
   const dFim = typeof params.dataFim === "string" ? new Date(params.dataFim) : params.dataFim;
 
-  const toIsoUtcCompact = (d: Date) => {
+  const formatUtc = (d: Date) => {
+    if (isNaN(d.getTime())) return "";
     return d.toISOString().replace(/-|:|\.\d{3}/g, "");
   };
 
-  const startStr = toIsoUtcCompact(dInicio);
-  const endStr = toIsoUtcCompact(dFim);
+  const startStr = formatUtc(dInicio);
+  const endStr = formatUtc(dFim);
 
-  const url = new URL("https://calendar.google.com/calendar/render");
-  url.searchParams.set("action", "TEMPLATE");
-  url.searchParams.set("text", params.titulo);
-  url.searchParams.set("dates", `${startStr}/${endStr}`);
-  if (params.descricao) url.searchParams.set("details", params.descricao);
-  url.searchParams.set("location", params.local);
+  const descLimpa = params.descricao?.trim() ?? "";
 
-  return url.toString();
+  const query = new URLSearchParams({
+    action: "TEMPLATE",
+    text: params.titulo,
+    dates: `${startStr}/${endStr}`,
+    details: descLimpa,
+    location: params.local,
+  });
+
+  return `https://calendar.google.com/calendar/render?${query.toString()}`;
 }
 

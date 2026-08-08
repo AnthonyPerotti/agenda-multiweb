@@ -195,22 +195,13 @@ function ConsultarContent() {
                   })}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn btn-primary"
-                  style={{ fontSize: 13, gap: 6, textDecoration: "none" }}
-                >
-                  📅 Adicionar ao Google Calendar ↗
-                </a>
-                <a
-                  href={`/api/tickets/${ticket.codigo}/ics`}
-                  download={`evento-${ticket.codigo}.ics`}
                   className="btn btn-secondary"
                   style={{ fontSize: 13, gap: 6, textDecoration: "none" }}
-                  title="Baixar arquivo de agenda (.ics)"
                 >
-                  📥 Baixar (.ics)
+                  📅 Adicionar à minha Agenda
                 </a>
                 <button className="btn btn-secondary" onClick={imprimirComprovante} style={{ fontSize: 13, gap: 6 }}>
-                  🖨️ Imprimir PDF
+                  🖨️ Imprimir Comprovante (PDF)
                 </button>
                 <div style={{
                   display: "flex",

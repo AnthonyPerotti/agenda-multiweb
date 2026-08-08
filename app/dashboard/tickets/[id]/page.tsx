@@ -205,16 +205,7 @@ export default function TicketDetalhe({ params }: { params: Promise<{ id: string
             className="btn btn-secondary"
             style={{ fontSize: 13, textDecoration: "none" }}
           >
-            📅 Google Calendar ↗
-          </a>
-          <a
-            href={`/api/tickets/${ticket.codigo}/ics`}
-            download={`evento-${ticket.codigo}.ics`}
-            className="btn btn-secondary"
-            style={{ fontSize: 13, textDecoration: "none" }}
-            title="Baixar arquivo iCal (.ics)"
-          >
-            📥 Baixar .ics
+            📅 Adicionar à minha Agenda
           </a>
           {/* Aceitar ticket */}
           {ticket.status !== "ACEITO" && ticket.status !== "RECUSADO" && ticket.status !== "FINALIZADO" && (
