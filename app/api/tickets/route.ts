@@ -176,7 +176,12 @@ export async function GET(request: Request) {
   if (arquivado) {
     andConditions.push({ arquivado: true });
   } else {
-    andConditions.push({ NOT: { arquivado: true } });
+    andConditions.push({
+      OR: [
+        { arquivado: false },
+        { arquivado: null },
+      ],
+    });
   }
 
   if (status) andConditions.push({ status });
@@ -194,14 +199,21 @@ export async function GET(request: Request) {
     });
   }
 
-  if (dataDe || dataAte) {
-    const dataFilter: Record<string, unknown> = {};
-    if (dataDe) dataFilter.gte = new Date(dataDe);
-    if (dataAte) dataFilter.lte = new Date(`${dataAte}T23:59:59`);
-    andConditions.push({ dataInicio: dataFilter });
+  if (dataDe && dataDe.trim() !== "") {
+    const dDe = new Date(dataDe);
+    if (!isNaN(dDe.getTime())) {
+      andConditions.push({ dataInicio: { gte: dDe } });
+    }
   }
 
-  const where = { AND: andConditions };
+  if (dataAte && dataAte.trim() !== "") {
+    const dAte = new Date(`${dataAte}T23:59:59`);
+    if (!isNaN(dAte.getTime())) {
+      andConditions.push({ dataInicio: { lte: dAte } });
+    }
+  }
+
+  const where = andConditions.length > 0 ? { AND: andConditions } : {};
 
   const [tickets, total] = await Promise.all([
     prisma.ticket.findMany({
