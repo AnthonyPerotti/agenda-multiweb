@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, use } from "react";
 import { useRouter } from "next/navigation";
-import { parseAnexosLinks } from "@/lib/utils";
+import { parseAnexosLinks, gerarGoogleCalendarUrl } from "@/lib/utils";
 
 const STATUS_LABELS: Record<string, string> = {
   ABERTO: "Em Aberto", EM_ANALISE: "Em Análise", ACEITO: "Aceito",
@@ -191,14 +191,30 @@ export default function TicketDetalhe({ params }: { params: Promise<{ id: string
           </h1>
         </div>
 
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <a
+            href={gerarGoogleCalendarUrl({
+              titulo: ticket.tituloEvento,
+              descricao: ticket.descricao,
+              local: ticket.local,
+              dataInicio: ticket.dataInicio,
+              dataFim: ticket.dataFim,
+            })}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-secondary"
+            style={{ fontSize: 13, textDecoration: "none" }}
+          >
+            📅 Google Calendar ↗
+          </a>
           <a
             href={`/api/tickets/${ticket.codigo}/ics`}
             download={`evento-${ticket.codigo}.ics`}
             className="btn btn-secondary"
             style={{ fontSize: 13, textDecoration: "none" }}
+            title="Baixar arquivo iCal (.ics)"
           >
-            📅 Baixar .ics
+            📥 Baixar .ics
           </a>
           {/* Aceitar ticket */}
           {ticket.status !== "ACEITO" && ticket.status !== "RECUSADO" && ticket.status !== "FINALIZADO" && (

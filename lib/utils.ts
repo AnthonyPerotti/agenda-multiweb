@@ -120,3 +120,33 @@ export function parseAnexosLinks(str?: string | null): ParsedAnexosLinks {
   return { linkOriginal: str, diasAgendamento: null };
 }
 
+/**
+ * Gera o link para criar evento diretamente no Google Calendar em uma nova aba.
+ */
+export function gerarGoogleCalendarUrl(params: {
+  titulo: string;
+  descricao?: string | null;
+  local: string;
+  dataInicio: Date | string;
+  dataFim: Date | string;
+}): string {
+  const dInicio = typeof params.dataInicio === "string" ? new Date(params.dataInicio) : params.dataInicio;
+  const dFim = typeof params.dataFim === "string" ? new Date(params.dataFim) : params.dataFim;
+
+  const toIsoUtcCompact = (d: Date) => {
+    return d.toISOString().replace(/-|:|\.\d{3}/g, "");
+  };
+
+  const startStr = toIsoUtcCompact(dInicio);
+  const endStr = toIsoUtcCompact(dFim);
+
+  const url = new URL("https://calendar.google.com/calendar/render");
+  url.searchParams.set("action", "TEMPLATE");
+  url.searchParams.set("text", params.titulo);
+  url.searchParams.set("dates", `${startStr}/${endStr}`);
+  if (params.descricao) url.searchParams.set("details", params.descricao);
+  url.searchParams.set("location", params.local);
+
+  return url.toString();
+}
+

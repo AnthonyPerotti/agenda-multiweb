@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
-import { parseAnexosLinks } from "@/lib/utils";
+import { parseAnexosLinks, gerarGoogleCalendarUrl } from "@/lib/utils";
 
 const STATUS_CONFIG: Record<string, { label: string; cor: string; icone: string }> = {
   ABERTO: { label: "Em Aberto", cor: "#60a5fa", icone: "🔵" },
@@ -184,17 +184,33 @@ function ConsultarContent() {
                 </div>
                 <div style={{ fontSize: 20, fontWeight: 700, color: "#f0f4ff" }}>{ticket.tituloEvento}</div>
               </div>
-              <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                <a
+                  href={gerarGoogleCalendarUrl({
+                    titulo: ticket.tituloEvento,
+                    descricao: ticket.descricao,
+                    local: ticket.local,
+                    dataInicio: ticket.dataInicio,
+                    dataFim: ticket.dataFim,
+                  })}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-primary"
+                  style={{ fontSize: 13, gap: 6, textDecoration: "none" }}
+                >
+                  📅 Adicionar ao Google Calendar ↗
+                </a>
                 <a
                   href={`/api/tickets/${ticket.codigo}/ics`}
                   download={`evento-${ticket.codigo}.ics`}
                   className="btn btn-secondary"
                   style={{ fontSize: 13, gap: 6, textDecoration: "none" }}
+                  title="Baixar arquivo de agenda (.ics)"
                 >
-                  📅 Adicionar à Agenda (.ics)
+                  📥 Baixar (.ics)
                 </a>
                 <button className="btn btn-secondary" onClick={imprimirComprovante} style={{ fontSize: 13, gap: 6 }}>
-                  🖨️ Imprimir Comprovante (PDF)
+                  🖨️ Imprimir PDF
                 </button>
                 <div style={{
                   display: "flex",
