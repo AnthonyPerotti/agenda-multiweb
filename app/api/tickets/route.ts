@@ -176,12 +176,7 @@ export async function GET(request: Request) {
   if (arquivado) {
     andConditions.push({ arquivado: true });
   } else {
-    andConditions.push({
-      OR: [
-        { arquivado: false },
-        { arquivado: null },
-      ],
-    });
+    andConditions.push({ arquivado: false });
   }
 
   if (status) andConditions.push({ status });
