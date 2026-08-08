@@ -32,6 +32,7 @@ interface HistoricoItem {
   id: string;
   nomeUsuario: string;
   acao: string;
+  detalhes?: string | null;
   criadoEm: string;
 }
 

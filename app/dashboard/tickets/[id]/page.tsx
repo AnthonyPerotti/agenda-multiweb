@@ -22,7 +22,7 @@ interface Ticket {
   descricao?: string; dataInicio: string; dataFim: string; local: string;
   criadoEm: string; emailMessageId?: string; anexosLinks?: string;
   mensagens: { id: string; nomeAutor: string; tipoAutor: string; conteudo: string; criadoEm: string; lida: boolean }[];
-  historico: { id: string; nomeUsuario: string; acao: string; criadoEm: string }[];
+  historico: { id: string; nomeUsuario: string; acao: string; detalhes?: string | null; criadoEm: string }[];
   evento?: { id: string; googleEventId?: string } | null;
   eventos?: { id: string; googleEventId?: string }[];
 }
