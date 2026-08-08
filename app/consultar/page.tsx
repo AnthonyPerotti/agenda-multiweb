@@ -174,86 +174,87 @@ function ConsultarContent() {
         </div>
 
         {/* Resultado */}
-        {ticket && (
-          <div className="fade-in">
-            {/* Card de status com Botão de Imprimir Comprovante */}
-            <div className="card no-print" style={{ marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-              <div>
-                <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>
-                  Solicitação #{ticket.codigo}
+        {ticket && (() => {
+          const parsedLinks = parseAnexosLinks(ticket.anexosLinks);
+          const descExibicao = (
+            parsedLinks.diasAgendamento?.length
+              ? ticket.descricao?.replace(/🗓 CRONOGRAMA DE MÚLTIPLOS DIAS:[\s\S]*?(?=\n\n|$)/g, "").trim()
+              : ticket.descricao
+          )?.trim();
+
+          return (
+            <div className="fade-in">
+              {/* Card de status com Botão de Imprimir Comprovante */}
+              <div className="card no-print" style={{ marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+                <div>
+                  <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>
+                    Solicitação #{ticket.codigo}
+                  </div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: "#f0f4ff" }}>{ticket.tituloEvento}</div>
                 </div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: "#f0f4ff" }}>{ticket.tituloEvento}</div>
-              </div>
-              <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                <a
-                  href={gerarGoogleCalendarUrl({
-                    titulo: ticket.tituloEvento,
-                    descricao: ticket.descricao,
-                    local: ticket.local,
-                    dataInicio: ticket.dataInicio,
-                    dataFim: ticket.dataFim,
-                  })}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-secondary"
-                  style={{ fontSize: 13, gap: 6, textDecoration: "none" }}
-                >
-                  📅 Adicionar à minha Agenda
-                </a>
-                <button className="btn btn-secondary" onClick={imprimirComprovante} style={{ fontSize: 13, gap: 6 }}>
-                  🖨️ Imprimir Comprovante (PDF)
-                </button>
-                <div style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  background: `${cfg?.cor}22`,
-                  border: `1px solid ${cfg?.cor}44`,
-                  borderRadius: 20,
-                  padding: "8px 16px",
-                  color: cfg?.cor,
-                  fontWeight: 700,
-                  fontSize: 15,
-                }}>
-                  {cfg?.icone} {cfg?.label}
+                <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                  <a
+                    href={gerarGoogleCalendarUrl({
+                      titulo: ticket.tituloEvento,
+                      descricao: ticket.descricao,
+                      local: ticket.local,
+                      dataInicio: ticket.dataInicio,
+                      dataFim: ticket.dataFim,
+                      diasAgendamento: parsedLinks.diasAgendamento,
+                    })}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-secondary"
+                    style={{ fontSize: 13, gap: 6, textDecoration: "none" }}
+                  >
+                    📅 Adicionar à minha Agenda
+                  </a>
+                  <button className="btn btn-secondary" onClick={imprimirComprovante} style={{ fontSize: 13, gap: 6 }}>
+                    🖨️ Imprimir Comprovante (PDF)
+                  </button>
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    background: `${cfg?.cor}22`,
+                    border: `1px solid ${cfg?.cor}44`,
+                    borderRadius: 20,
+                    padding: "8px 16px",
+                    color: cfg?.cor,
+                    fontWeight: 700,
+                    fontSize: 15,
+                  }}>
+                    {cfg?.icone} {cfg?.label}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Abas */}
-            <div className="no-print" style={{ display: "flex", gap: 4, marginBottom: 20, borderBottom: "1px solid var(--border)" }}>
-              {(["detalhes", "chat"] as const).map((a) => (
-                <button
-                  key={a}
-                  onClick={() => setAba(a)}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    padding: "10px 20px",
-                    fontSize: 14,
-                    fontWeight: 600,
-                    color: aba === a ? "#4ade80" : "#64748b",
-                    borderBottom: aba === a ? "2px solid #4ade80" : "2px solid transparent",
-                    marginBottom: -1,
-                    transition: "color 0.15s",
-                  }}
-                >
-                  {a === "detalhes" ? "📋 Detalhes" : `💬 Mensagens (${ticket.mensagens.filter(m => m.tipoAutor === "EQUIPE").length})`}
-                </button>
-              ))}
-            </div>
+              {/* Abas */}
+              <div className="no-print" style={{ display: "flex", gap: 4, marginBottom: 20, borderBottom: "1px solid var(--border)" }}>
+                {(["detalhes", "chat"] as const).map((a) => (
+                  <button
+                    key={a}
+                    onClick={() => setAba(a)}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: "10px 20px",
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: aba === a ? "#4ade80" : "#64748b",
+                      borderBottom: aba === a ? "2px solid #4ade80" : "2px solid transparent",
+                      marginBottom: -1,
+                      transition: "color 0.15s",
+                    }}
+                  >
+                    {a === "detalhes" ? "📋 Detalhes" : `💬 Mensagens (${ticket.mensagens.filter(m => m.tipoAutor === "EQUIPE").length})`}
+                  </button>
+                ))}
+              </div>
 
-            {/* Aba Detalhes */}
-            {aba === "detalhes" && (() => {
-              const parsedLinks = parseAnexosLinks(ticket.anexosLinks);
-              const descExibicao = (
-                parsedLinks.diasAgendamento?.length
-                  ? ticket.descricao?.replace(/🗓 CRONOGRAMA DE MÚLTIPLOS DIAS:[\s\S]*?(?=\n\n|$)/g, "").trim()
-                  : ticket.descricao
-              )?.trim();
-
-              return (
+              {/* Aba Detalhes */}
+              {aba === "detalhes" && (
                 <div className="card fade-in no-print">
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                     {[
@@ -281,15 +282,42 @@ function ConsultarContent() {
                         {parsedLinks.diasAgendamento.map((d, idx) => {
                           const dtIni = new Date(d.dataInicio);
                           const dtFim = new Date(d.dataFim);
+                          const gcalDayUrl = gerarGoogleCalendarUrl({
+                            titulo: `${ticket.tituloEvento} (Dia ${idx + 1})`,
+                            descricao: ticket.descricao,
+                            local: ticket.local,
+                            dataInicio: d.dataInicio,
+                            dataFim: d.dataFim,
+                          });
+
                           return (
-                            <div key={idx} style={{ background: "rgba(0,102,51,0.12)", border: "1px solid rgba(0,102,51,0.3)", padding: "10px 14px", borderRadius: 8 }}>
-                              <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 700 }}>Dia {idx + 1}</div>
-                              <div style={{ color: "#4ade80", fontWeight: 700, fontSize: 14, marginTop: 2 }}>
-                                {dtIni.toLocaleDateString("pt-BR")}
+                            <div key={idx} style={{ background: "rgba(0,102,51,0.12)", border: "1px solid rgba(0,102,51,0.3)", padding: "12px 14px", borderRadius: 8, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                              <div>
+                                <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 700 }}>Dia {idx + 1}</div>
+                                <div style={{ color: "#4ade80", fontWeight: 700, fontSize: 14, marginTop: 2 }}>
+                                  {dtIni.toLocaleDateString("pt-BR")}
+                                </div>
+                                <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 2 }}>
+                                  ⏰ {dtIni.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} às {dtFim.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                                </div>
                               </div>
-                              <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 2 }}>
-                                ⏰ {dtIni.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} às {dtFim.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                              </div>
+                              <a
+                                href={gcalDayUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  marginTop: 10,
+                                  fontSize: 11,
+                                  fontWeight: 600,
+                                  color: "#60a5fa",
+                                  textDecoration: "underline",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 4,
+                                }}
+                              >
+                                ➕ Adicionar este dia ↗
+                              </a>
                             </div>
                           );
                         })}

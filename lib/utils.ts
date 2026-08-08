@@ -130,6 +130,7 @@ export function gerarGoogleCalendarUrl(params: {
   local: string;
   dataInicio: Date | string;
   dataFim: Date | string;
+  diasAgendamento?: DiasAgendamentoItem[] | null;
 }): string {
   const dInicio = typeof params.dataInicio === "string" ? new Date(params.dataInicio) : params.dataInicio;
   const dFim = typeof params.dataFim === "string" ? new Date(params.dataFim) : params.dataFim;
@@ -142,17 +143,32 @@ export function gerarGoogleCalendarUrl(params: {
   const startStr = formatUtc(dInicio);
   const endStr = formatUtc(dFim);
 
-  // Limpa o texto da descrição (remove o cabeçalho bruto de múltiplos dias se houver)
+  // Limpa o texto da descrição
   const descLimpa = (
     params.descricao
       ? params.descricao.replace(/🗓 CRONOGRAMA DE MÚLTIPLOS DIAS:[\s\S]*?(?=\n\n|$)/g, "").trim()
       : ""
   );
 
+  let detalhesTexto = descLimpa;
+
+  if (params.diasAgendamento && params.diasAgendamento.length > 0) {
+    const cronogramaLinhas = params.diasAgendamento.map((d, i) => {
+      const dtIni = new Date(d.dataInicio);
+      const dtFim = new Date(d.dataFim);
+      const dataStr = dtIni.toLocaleDateString("pt-BR");
+      const horaIniStr = dtIni.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+      const horaFimStr = dtFim.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+      return `• Dia ${i + 1} (${dataStr}): ${horaIniStr} às ${horaFimStr}`;
+    });
+
+    detalhesTexto = `🗓 CRONOGRAMA DETALHADO DO EVENTO (${params.diasAgendamento.length} DIAS):\n${cronogramaLinhas.join("\n")}${descLimpa ? `\n\nObservações:\n${descLimpa}` : ""}`;
+  }
+
   const query = new URLSearchParams({
     text: params.titulo,
     dates: `${startStr}/${endStr}`,
-    details: descLimpa,
+    details: detalhesTexto,
     location: params.local,
   });
 
