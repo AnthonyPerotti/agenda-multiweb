@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const [totalTickets, totalEventos, aceitos, recusados, abertos, finalizados, tickets] = await Promise.all([
+    const [totalTickets, totalEventos, aceitos, recusados, abertos, finalizados, tickets, eventosManuais] = await Promise.all([
       prisma.ticket.count({ where: whereTicket }),
       prisma.evento.count({ where: whereEvento }),
       prisma.ticket.count({ where: { ...whereTicket, status: "ACEITO" } }),
@@ -33,9 +33,27 @@ export async function GET(request: Request) {
           tipo: true,
           status: true,
           criadoEm: true,
+          dataInicio: true,
+        },
+      }),
+      prisma.evento.findMany({
+        where: {
+          ticketId: null,
+          ...whereEvento,
+        },
+        select: {
+          tipo: true,
+          criadoEm: true,
+          dataInicio: true,
         },
       }),
     ]);
+
+    // Combinar tickets e eventos criados diretamente na agenda pela equipe
+    const todosAgendamentos = [
+      ...tickets.map((t) => ({ tipo: t.tipo, data: t.criadoEm || t.dataInicio })),
+      ...eventosManuais.map((e) => ({ tipo: e.tipo, data: e.criadoEm || e.dataInicio })),
+    ];
 
     // Contagem por tipo de evento
     const porTipo: Record<string, number> = {
@@ -43,8 +61,8 @@ export async function GET(request: Request) {
       MINI_AUDITORIO: 0,
       COLACAO_FORMATURA: 0,
     };
-    for (const t of tickets) {
-      porTipo[t.tipo] = (porTipo[t.tipo] ?? 0) + 1;
+    for (const item of todosAgendamentos) {
+      porTipo[item.tipo] = (porTipo[item.tipo] ?? 0) + 1;
     }
 
     // Contagem por mês nos últimos 6 meses
@@ -56,8 +74,8 @@ export async function GET(request: Request) {
       mesesMap[chave] = 0;
     }
 
-    for (const t of tickets) {
-      const d = new Date(t.criadoEm);
+    for (const item of todosAgendamentos) {
+      const d = new Date(item.data);
       const chave = `${d.toLocaleString("pt-BR", { month: "short" })}/${d.getFullYear().toString().substring(2)}`;
       if (chave in mesesMap) {
         mesesMap[chave]++;
