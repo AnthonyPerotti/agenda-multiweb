@@ -795,6 +795,8 @@ export default function ConfiguracoesPage() {
                 💾 Baixar Backup do Banco de Dados (.db)
               </a>
             </div>
+          </div>
+
           <div className="card" style={{ marginBottom: 20 }}>
             <h3 style={{ fontSize: 16, fontWeight: 700, color: "#f0f4ff", marginBottom: 8 }}>📥 Restauração de Backup do Banco de Dados</h3>
             <p style={{ color: "#64748b", fontSize: 13, marginBottom: 20 }}>
