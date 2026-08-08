@@ -121,7 +121,8 @@ export function parseAnexosLinks(str?: string | null): ParsedAnexosLinks {
 }
 
 /**
- * Gera o link para criar evento diretamente no Google Calendar em uma nova aba.
+ * Gera o link para criar evento diretamente no Google Calendar do solicitante em uma nova aba.
+ * Utiliza o endpoint oficial r/eventedit do Google Calendar com parâmetros pré-preenchidos.
  */
 export function gerarGoogleCalendarUrl(params: {
   titulo: string;
@@ -141,16 +142,20 @@ export function gerarGoogleCalendarUrl(params: {
   const startStr = formatUtc(dInicio);
   const endStr = formatUtc(dFim);
 
-  const descLimpa = params.descricao?.trim() ?? "";
+  // Limpa o texto da descrição (remove o cabeçalho bruto de múltiplos dias se houver)
+  const descLimpa = (
+    params.descricao
+      ? params.descricao.replace(/🗓 CRONOGRAMA DE MÚLTIPLOS DIAS:[\s\S]*?(?=\n\n|$)/g, "").trim()
+      : ""
+  );
 
   const query = new URLSearchParams({
-    action: "TEMPLATE",
     text: params.titulo,
     dates: `${startStr}/${endStr}`,
     details: descLimpa,
     location: params.local,
   });
 
-  return `https://calendar.google.com/calendar/render?${query.toString()}`;
+  return `https://calendar.google.com/calendar/r/eventedit?${query.toString()}`;
 }
 
