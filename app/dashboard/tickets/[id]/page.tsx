@@ -270,6 +270,12 @@ export default function TicketDetalhe({ params }: { params: Promise<{ id: string
       {/* Aba Detalhes */}
       {aba === "detalhes" && (() => {
         const parsedLinks = parseAnexosLinks(ticket.anexosLinks);
+        const descExibicao = (
+          parsedLinks.diasAgendamento?.length
+            ? ticket.descricao?.replace(/🗓 CRONOGRAMA DE MÚLTIPLOS DIAS:[\s\S]*?(?=\n\n|$)/g, "").trim()
+            : ticket.descricao
+        )?.trim();
+
         return (
           <div className="card fade-in">
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
@@ -314,10 +320,10 @@ export default function TicketDetalhe({ params }: { params: Promise<{ id: string
               </div>
             )}
 
-            {ticket.descricao && (
+            {descExibicao && (
               <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
                 <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Descrição</div>
-                <div style={{ color: "#94a3b8", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{ticket.descricao}</div>
+                <div style={{ color: "#94a3b8", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{descExibicao}</div>
               </div>
             )}
 

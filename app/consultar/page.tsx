@@ -240,11 +240,17 @@ function ConsultarContent() {
             {/* Aba Detalhes */}
             {aba === "detalhes" && (() => {
               const parsedLinks = parseAnexosLinks(ticket.anexosLinks);
+              const descExibicao = (
+                parsedLinks.diasAgendamento?.length
+                  ? ticket.descricao?.replace(/🗓 CRONOGRAMA DE MÚLTIPLOS DIAS:[\s\S]*?(?=\n\n|$)/g, "").trim()
+                  : ticket.descricao
+              )?.trim();
+
               return (
                 <div className="card fade-in no-print">
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                     {[
-                      { label: "Solicitante", valor: `${ticket.nomeSolicitante} (${ticket.emailSolicitante})` },
+                      { label: "Solicitante", valor: ticket.emailSolicitante ? `${ticket.nomeSolicitante} (${ticket.emailSolicitante})` : ticket.nomeSolicitante },
                       { label: "Tipo", valor: ticket.tipo === "TRANSMISSAO_EXTERNA" ? "📡 Transmissão Externa" : "🎤 Mini Auditório" },
                       { label: "Local", valor: ticket.local },
                       { label: "Início", valor: formatarData(ticket.dataInicio) },
@@ -262,7 +268,7 @@ function ConsultarContent() {
                   {parsedLinks.diasAgendamento && parsedLinks.diasAgendamento.length > 0 && (
                     <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
                       <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>
-                        📅 Cronograma Detalhado ({parsedLinks.diasAgendamento.length} dias)
+                        📅 Cronograma Detalhado do Evento ({parsedLinks.diasAgendamento.length} dias)
                       </div>
                       <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
                         {parsedLinks.diasAgendamento.map((d, idx) => {
@@ -284,10 +290,10 @@ function ConsultarContent() {
                     </div>
                   )}
 
-                  {ticket.descricao && (
+                  {descExibicao && (
                     <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
                       <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Descrição</div>
-                      <div style={{ color: "#94a3b8", fontSize: 14, lineHeight: 1.6 }}>{ticket.descricao}</div>
+                      <div style={{ color: "#94a3b8", fontSize: 14, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{descExibicao}</div>
                     </div>
                   )}
 
