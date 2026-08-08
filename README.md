@@ -37,6 +37,7 @@ Sistema de Agendamento de Transmissões ao Vivo e Reservas do Mini Auditório (P
 - **Histórico Completo**: Visualização das mensagens e ações tomadas em cada chamado.
 
 ### ⚙️ Configurações e Segurança
+- **Gerenciamento de Tickets em Lote**: Seção discreta e expansível nas configurações para listar todos os códigos registrados e realizar ações em massa (Arquivar, Desarquivar ou Excluir permanentemente).
 - **Backup & Restauração**: Download do banco de dados e restauração de backups diretamente pela interface.
 - **Gestão de Usuários**: Cadastro de equipe, alteração de e-mail e redefinição de senha com hash `bcrypt`.
 
