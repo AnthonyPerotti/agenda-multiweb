@@ -425,19 +425,34 @@
    Estilos de Impressão (Comprovante PDF Oficial UFSM)
    ============================================================ */
 
-.comprovante-print {
+.print-only {
   display: none;
-  position: relative;
 }
 
 @media print {
   body {
     background: white !important;
-    color: black !important;
+    color: #0f172a !important;
   }
 
-  .no-print, nav, header, sidebar, footer {
+  .no-print, nav, header, sidebar, .sidebar, footer {
     display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .card {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    color: #0f172a !important;
+    break-inside: avoid;
+  }
+
+  h1, h2, h3, h4, strong {
+    color: #0f172a !important;
   }
 
   .comprovante-print {

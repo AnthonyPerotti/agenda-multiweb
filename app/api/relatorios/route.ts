@@ -2,19 +2,33 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 // GET /api/relatorios — retorna métricas e relatórios estatísticos da CTE
-export async function GET() {
+export async function GET(request: Request) {
   const session = await auth();
   if (!session?.user) return Response.json({ erro: "Não autorizado" }, { status: 401 });
 
+  const { searchParams } = new URL(request.url);
+  const tipoFiltro = searchParams.get("tipo")?.trim();
+
+  const whereTicket: Record<string, unknown> = {};
+  if (tipoFiltro && tipoFiltro !== "TODOS") {
+    whereTicket.tipo = tipoFiltro;
+  }
+
+  const whereEvento: Record<string, unknown> = {};
+  if (tipoFiltro && tipoFiltro !== "TODOS") {
+    whereEvento.tipo = tipoFiltro;
+  }
+
   try {
     const [totalTickets, totalEventos, aceitos, recusados, abertos, finalizados, tickets] = await Promise.all([
-      prisma.ticket.count(),
-      prisma.evento.count(),
-      prisma.ticket.count({ where: { status: "ACEITO" } }),
-      prisma.ticket.count({ where: { status: "RECUSADO" } }),
-      prisma.ticket.count({ where: { status: "ABERTO" } }),
-      prisma.ticket.count({ where: { status: "FINALIZADO" } }),
+      prisma.ticket.count({ where: whereTicket }),
+      prisma.evento.count({ where: whereEvento }),
+      prisma.ticket.count({ where: { ...whereTicket, status: "ACEITO" } }),
+      prisma.ticket.count({ where: { ...whereTicket, status: "RECUSADO" } }),
+      prisma.ticket.count({ where: { ...whereTicket, status: "ABERTO" } }),
+      prisma.ticket.count({ where: { ...whereTicket, status: "FINALIZADO" } }),
       prisma.ticket.findMany({
+        where: whereTicket,
         select: {
           tipo: true,
           status: true,

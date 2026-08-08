@@ -18,8 +18,14 @@ export async function GET() {
     const horas1 = parseInt(cfgHoras1?.valor ?? "24");
     const horas2 = parseInt(cfgHoras2?.valor ?? "2");
 
+    if (horas1 <= 0 && horas2 <= 0) {
+      return Response.json({ mensagem: "Nenhum lembrete com prazo ativo." });
+    }
+
     const agora = new Date();
-    const limiteFuturo = new Date(agora.getTime() + Math.max(horas1, horas2, 48) * 3600 * 1000);
+    const prazosValidos = [horas1, horas2].filter((h) => h > 0);
+    const maiorPrazo = Math.max(...prazosValidos, 24);
+    const limiteFuturo = new Date(agora.getTime() + (maiorPrazo + 24) * 3600 * 1000);
 
     // Buscar eventos nos próximos dias
     const eventosProximos = await prisma.evento.findMany({
@@ -41,9 +47,10 @@ export async function GET() {
 
       const diffHoras = (new Date(ev.dataInicio).getTime() - agora.getTime()) / (3600 * 1000);
 
-      // Verificar se está na janela do Lembrete 1 (ex: ~24h) ou Lembrete 2 (ex: ~2h)
-      const naJanela1 = diffHoras <= horas1 && diffHoras >= horas1 - 1;
-      const naJanela2 = diffHoras <= horas2 && diffHoras >= horas2 - 0.5;
+      // Lembrete 1 só dispara se horas1 > 0
+      const naJanela1 = horas1 > 0 && diffHoras <= horas1 && diffHoras >= horas1 - 1;
+      // Lembrete 2 só dispara se horas2 > 0
+      const naJanela2 = horas2 > 0 && diffHoras <= horas2 && diffHoras >= horas2 - 0.5;
 
       if (naJanela1 || naJanela2) {
         try {

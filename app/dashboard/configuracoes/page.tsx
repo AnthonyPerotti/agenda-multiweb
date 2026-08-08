@@ -168,6 +168,43 @@ export default function ConfiguracoesPage() {
   const [templateAtivo, setTemplateAtivo] = useState("template_confirmacao");
   const [emailTeste, setEmailTeste] = useState("");
   const [emailTesteTemplate, setEmailTesteTemplate] = useState("");
+  const [arquivoBackup, setArquivoBackup] = useState<File | null>(null);
+  const [restaurando, setRestaurando] = useState(false);
+
+  const restaurarBackup = async () => {
+    if (!arquivoBackup) {
+      setFeedback({ tipo: "erro", mensagem: "Selecione um arquivo de banco de dados (.db) para restaurar." });
+      return;
+    }
+    if (!confirm("⚠️ ATENÇÃO: Restaurar o banco irá substituir TODOS os dados atuais pelos dados do arquivo enviado. Deseja continuar?")) {
+      return;
+    }
+
+    setRestaurando(true);
+    setFeedback(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", arquivoBackup);
+
+      const res = await fetch("/api/configuracoes/restaurar", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setFeedback({ tipo: "sucesso", mensagem: data.mensagem });
+        setArquivoBackup(null);
+        setTimeout(() => window.location.reload(), 2000);
+      } else {
+        setFeedback({ tipo: "erro", mensagem: data.erro ?? "Erro ao restaurar banco" });
+      }
+    } catch {
+      setFeedback({ tipo: "erro", mensagem: "Erro ao enviar arquivo de backup." });
+    } finally {
+      setRestaurando(false);
+    }
+  };
 
   const buscarConfigs = useCallback(async () => {
     setCarregando(true);
@@ -634,26 +671,26 @@ export default function ConfiguracoesPage() {
                   <input
                     className="input"
                     type="number"
-                    min="1"
+                    min="0"
                     max="168"
                     value={configs.lembrete_horas_1 ?? "24"}
                     onChange={(e) => atualizar("lembrete_horas_1", e.target.value)}
                     placeholder="24"
                   />
-                  <span style={{ fontSize: 11, color: "#64748b" }}>Padrão: 24h antes</span>
+                  <span style={{ fontSize: 11, color: "#64748b" }}>Padrão: 24h (Digite 0 para desativar o 1º lembrete)</span>
                 </div>
                 <div>
                   <label className="label">2º Lembrete (Horas antes do evento)</label>
                   <input
                     className="input"
                     type="number"
-                    min="1"
+                    min="0"
                     max="48"
                     value={configs.lembrete_horas_2 ?? "2"}
                     onChange={(e) => atualizar("lembrete_horas_2", e.target.value)}
                     placeholder="2"
                   />
-                  <span style={{ fontSize: 11, color: "#64748b" }}>Padrão: 2h antes</span>
+                  <span style={{ fontSize: 11, color: "#64748b" }}>Padrão: 2h (Digite 0 para desativar o 2º lembrete)</span>
                 </div>
               </div>
             </div>
@@ -757,6 +794,28 @@ export default function ConfiguracoesPage() {
               >
                 💾 Baixar Backup do Banco de Dados (.db)
               </a>
+            </div>
+          <div className="card" style={{ marginBottom: 20 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#f0f4ff", marginBottom: 8 }}>📥 Restauração de Backup do Banco de Dados</h3>
+            <p style={{ color: "#64748b", fontSize: 13, marginBottom: 20 }}>
+              Selecione um arquivo de backup SQLite (`.db`) previamente baixado para restaurar todos os dados do sistema.
+            </p>
+            <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+              <input
+                type="file"
+                accept=".db"
+                className="input"
+                onChange={(e) => setArquivoBackup(e.target.files?.[0] ?? null)}
+                style={{ flex: 1, minWidth: 240 }}
+              />
+              <button
+                className="btn btn-secondary"
+                onClick={restaurarBackup}
+                disabled={!arquivoBackup || restaurando}
+                style={{ fontSize: 13, borderColor: "rgba(239,68,68,0.4)", color: "#f87171" }}
+              >
+                {restaurando ? "⏳ Restaurando..." : "📥 Restaurar Banco de Dados"}
+              </button>
             </div>
           </div>
         </div>
