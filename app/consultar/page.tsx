@@ -387,8 +387,6 @@ function ConsultarContent() {
                     </div>
                   )}
                 </div>
-              );
-            })()}
 
             {/* Aba Chat */}
             {aba === "chat" && (
