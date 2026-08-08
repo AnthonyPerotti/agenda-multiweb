@@ -51,7 +51,8 @@ export default function RelatoriosPage() {
       `Tickets Em Aberto,${data.resumo.abertos}\n\n` +
       "Tipo de Evento,Quantidade\n" +
       `Transmissão Externa,${data.porTipo.TRANSMISSAO_EXTERNA ?? 0}\n` +
-      `Mini Auditório,${data.porTipo.MINI_AUDITORIO ?? 0}\n`;
+      `Mini Auditório,${data.porTipo.MINI_AUDITORIO ?? 0}\n` +
+      `Colação / Formatura,${data.porTipo.COLACAO_FORMATURA ?? 0}\n`;
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -77,6 +78,8 @@ export default function RelatoriosPage() {
       ? "📡 Apenas Transmissão Externa"
       : tipoFiltro === "MINI_AUDITORIO"
       ? "🎤 Apenas Mini Auditório (Sala 109)"
+      : tipoFiltro === "COLACAO_FORMATURA"
+      ? "🎓 Apenas Colação / Formatura"
       : "🌐 Todos os Tipos de Agendamento";
 
   return (
@@ -124,6 +127,7 @@ export default function RelatoriosPage() {
               { id: "TODOS", label: "🌐 Todos os Tipos" },
               { id: "TRANSMISSAO_EXTERNA", label: "📡 Transmissão Externa" },
               { id: "MINI_AUDITORIO", label: "🎤 Mini Auditório" },
+              { id: "COLACAO_FORMATURA", label: "🎓 Colação / Formatura" },
             ].map((op) => (
               <button
                 key={op.id}
@@ -218,6 +222,11 @@ export default function RelatoriosPage() {
                     label: "🎤 Mini Auditório (Sala 109)",
                     qtd: data?.porTipo.MINI_AUDITORIO ?? 0,
                     cor: "#a855f7",
+                  },
+                  {
+                    label: "🎓 Colação / Formatura",
+                    qtd: data?.porTipo.COLACAO_FORMATURA ?? 0,
+                    cor: "#f5a623",
                   },
                 ].map((tipo) => {
                   const pct = resumo.totalTickets > 0 ? Math.round((tipo.qtd / resumo.totalTickets) * 100) : 0;

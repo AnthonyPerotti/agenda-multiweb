@@ -41,6 +41,7 @@ export async function GET(request: Request) {
     const porTipo: Record<string, number> = {
       TRANSMISSAO_EXTERNA: 0,
       MINI_AUDITORIO: 0,
+      COLACAO_FORMATURA: 0,
     };
     for (const t of tickets) {
       porTipo[t.tipo] = (porTipo[t.tipo] ?? 0) + 1;
